@@ -19,7 +19,7 @@ import java.io.IOException;
 public class ComboController {
     private final ComboService comboService;
 
-    @GetMapping("/get-all-combo")
+    @GetMapping("/get-all-combos")
     public ApiResponse<?> getAllCombo() {
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "ALL COMBOS", comboService.getAllCombo()

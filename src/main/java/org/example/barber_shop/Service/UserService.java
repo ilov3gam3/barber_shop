@@ -144,4 +144,16 @@ public class UserService {
         userRepository.save(user);
         return fileMapper.toFileResponse(savedFile);
     }
+    public List<UserResponse> getAllStaffs(){
+        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_STAFF));
+    }
+    public List<UserResponse> getAllCustomers(){
+        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_CUSTOMER));
+    }
+    public List<UserResponse> getAllAdmins(){
+        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_ADMIN));
+    }
+    public List<UserResponse> getAllReceptionists(){
+        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_RECEPTIONIST));
+    }
 }

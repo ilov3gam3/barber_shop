@@ -50,4 +50,28 @@ public class UserController {
                 userService.updateAvatar(image)
         );
     }
+    @GetMapping("/get-all-staffs")
+    public ApiResponse<?> getAllStaffs() {
+        return new ApiResponse<>(
+                HttpStatus.CONTINUE.value(), "ALL STAFFS", userService.getAllStaffs()
+        );
+    }
+    @GetMapping("/get-all-admins")
+    public ApiResponse<?> getAllAdmins() {
+        return new ApiResponse<>(
+                HttpStatus.CONTINUE.value(), "ALL ADMINS", userService.getAllAdmins()
+        );
+    }
+    @GetMapping("/get-all-customers")
+    public ApiResponse<?> getAllCustomers() {
+        return new ApiResponse<>(
+                HttpStatus.CONTINUE.value(), "ALL CUSTOMERS", userService.getAllCustomers()
+        );
+    }
+    @GetMapping("/get-all-receptionists")
+    public ApiResponse<?> getAllReceptionists() {
+        return new ApiResponse<>(
+                HttpStatus.CONTINUE.value(), "ALL RECEPTIONISTS", userService.getAllReceptionists()
+        );
+    }
 }
