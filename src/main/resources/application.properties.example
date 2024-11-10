@@ -1,0 +1,24 @@
+spring.application.name=
+
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+spring.datasource.driver-class-name=
+spring.jpa.hibernate.ddl-auto=
+
+jwt_secret_key=
+
+spring.mail.host=
+spring.mail.port=
+spring.mail.username=
+spring.mail.password=
+spring.mail.properties.mail.smtp.auth=
+spring.mail.properties.mail.smtp.starttls.enable=
+
+spring.servlet.multipart.max-file-size=
+spring.servlet.multipart.max-request-size=
+
+token_ttl=
+#15 minutes
+access_token_expire_time=
+#15 days
