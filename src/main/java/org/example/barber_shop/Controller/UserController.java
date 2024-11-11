@@ -46,7 +46,7 @@ public class UserController {
     public ApiResponse<?> updateAvatar(@RequestParam("image") MultipartFile image) throws IOException {
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
-                "AVATAR LOADED",
+                "AVATAR CHANGED",
                 userService.updateAvatar(image)
         );
     }

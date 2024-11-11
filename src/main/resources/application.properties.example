@@ -1,24 +1,28 @@
-spring.application.name=
+spring.application.name=BarberShop
 
 spring.datasource.url=
 spring.datasource.username=
 spring.datasource.password=
-spring.datasource.driver-class-name=
-spring.jpa.hibernate.ddl-auto=
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.jpa.hibernate.ddl-auto=update
 
 jwt_secret_key=
 
-spring.mail.host=
-spring.mail.port=
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
 spring.mail.username=
 spring.mail.password=
-spring.mail.properties.mail.smtp.auth=
-spring.mail.properties.mail.smtp.starttls.enable=
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
 
-spring.servlet.multipart.max-file-size=
-spring.servlet.multipart.max-request-size=
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
 
-token_ttl=
+token_ttl=900000
 #15 minutes
-access_token_expire_time=
+access_token_expire_time=1296000000
 #15 days
+springdoc.swagger-ui.urls[0].name=Local
+springdoc.swagger-ui.urls[0].url=http://localhost:8080/v3/api-docs
+springdoc.swagger-ui.urls[1].name=Production
+springdoc.swagger-ui.urls[1].url=https://52.187.14.110/v3/api-docs

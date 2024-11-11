@@ -1,20 +1,35 @@
 package org.example.barber_shop.Controller;
 
+import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
 import org.example.barber_shop.DTO.Booking.BookingRequest;
+import org.example.barber_shop.Service.BookingService;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/booking")
+@RequiredArgsConstructor
 public class BookingController {
-//    @PostMapping("/book")
-//    public ApiResponse<?> book(@RequestBody BookingRequest bookingRequest) {
-//        return new ApiResponse<>(
-//                HttpStatus.CREATED.value(), "BOOK SUCCESS",
-//        );
-//    }
+
+    private final BookingService bookingService;
+
+    @PostMapping("/book")
+    public ApiResponse<?> book(@RequestBody BookingRequest bookingRequest) {
+        return new ApiResponse<>(
+                HttpStatus.CREATED.value(), "BOOK SUCCESS", bookingService.addBooking(bookingRequest)
+        );
+    }
+    @GetMapping("/customer-get-bookings")
+    public ApiResponse<?> getBookings() {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "YOUR BOOKINGS", bookingService.getBookingsOfCustomers()
+        );
+    }
+    @GetMapping("/confirm-booking")
+    public ApiResponse<?> confirmBooking(@RequestParam long booking_id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "CONFIRM BOOKING", bookingService.confirmBooking(booking_id)
+        );
+    }
 }

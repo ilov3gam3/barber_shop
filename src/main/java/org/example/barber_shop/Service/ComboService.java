@@ -2,7 +2,7 @@ package org.example.barber_shop.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import org.example.barber_shop.Config.SecurityUtils;
+import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Combo.ComboRequest;
 import org.example.barber_shop.DTO.Combo.ComboResponse;
 import org.example.barber_shop.Entity.Combo;

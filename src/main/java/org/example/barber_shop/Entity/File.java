@@ -24,9 +24,6 @@ public class File extends DistributedEntity{
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    @ManyToOne
-    private Service service;
-
     public File(String url) {
         this.url = url;
     }

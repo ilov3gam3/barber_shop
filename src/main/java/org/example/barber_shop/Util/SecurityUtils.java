@@ -1,5 +1,6 @@
-package org.example.barber_shop.Config;
+package org.example.barber_shop.Util;
 
+import org.example.barber_shop.Config.SecurityUser;
 import org.example.barber_shop.Entity.User;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;

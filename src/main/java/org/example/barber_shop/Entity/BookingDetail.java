@@ -23,5 +23,13 @@ public class BookingDetail extends DistributedEntity{
     @ManyToOne
     private Combo combo;
 
-    private int duration;
+    public BookingDetail(Booking booking, Service service) {
+        this.booking = booking;
+        this.service = service;
+    }
+
+    public BookingDetail(Booking booking, Combo combo) {
+        this.booking = booking;
+        this.combo = combo;
+    }
 }

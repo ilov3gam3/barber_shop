@@ -26,6 +26,6 @@ public class Combo extends DistributedEntity{
     @ManyToMany
     private List<Service> services;
 
-    @OneToMany
+    @ManyToMany
     private List<File> images;
 }

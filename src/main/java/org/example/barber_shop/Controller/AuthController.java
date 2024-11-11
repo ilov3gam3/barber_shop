@@ -2,8 +2,10 @@ package org.example.barber_shop.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
+import org.example.barber_shop.DTO.User.ForgotPasswordRequest;
 import org.example.barber_shop.DTO.User.LoginRequest;
 import org.example.barber_shop.DTO.User.RegisterRequest;
+import org.example.barber_shop.DTO.User.ResetPasswordRequest;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +48,20 @@ public class AuthController {
                 HttpStatus.OK.value(),
                 "LOGIN_SUCCESS",
                 userService.login(loginRequest)
+        );
+    }
+    @PostMapping("/forgot-password")
+    public ApiResponse<?> forgotPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest){
+        userService.forgotPassword(forgotPasswordRequest);
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "MAIL SENT", null
+        );
+    }
+    @PostMapping("/reset-password")
+    public ApiResponse<?> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest){
+        userService.resetPassword(resetPasswordRequest);
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "PASSWORD RESET", null
         );
     }
 }

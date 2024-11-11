@@ -2,7 +2,7 @@ package org.example.barber_shop.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import org.example.barber_shop.Config.SecurityUtils;
+import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Service.ServiceRequest;
 import org.example.barber_shop.DTO.Service.ServiceResponse;
 import org.example.barber_shop.Entity.File;

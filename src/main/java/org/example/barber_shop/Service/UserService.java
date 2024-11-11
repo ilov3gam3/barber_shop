@@ -3,7 +3,7 @@ package org.example.barber_shop.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Config.SecurityUser;
-import org.example.barber_shop.Config.SecurityUtils;
+import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.File.FileResponse;
 import org.example.barber_shop.DTO.User.*;
@@ -21,6 +21,7 @@ import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -113,10 +114,16 @@ public class UserService {
         }
     }
     public String login(LoginRequest loginRequest){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password));
-        SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-        User user = securityUser.getUser();
-        return jwtUtil.generateToken(user);
+        User user = userRepository.findByEmail(loginRequest.email);
+        if (user != null){
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password));
+            SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+            user = securityUser.getUser();
+            return jwtUtil.generateToken(user);
+        } else {
+            throw new BadCredentialsException("Bad credentials");
+        }
+
     }
     public List<UserResponse> getAllUsers(){
         return userMapper.toResponses(userRepository.findAll());
@@ -173,6 +180,34 @@ public class UserService {
             return true;
         } else {
             return false;
+        }
+    }
+    public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest){
+        User user = userRepository.findByEmail(forgotPasswordRequest.email);
+        if (user != null){
+            String token = UUID.randomUUID() + "-" + getTokenTTL();
+            user.setToken(token);
+            userRepository.save(user);
+            mailService.sendMailToken(forgotPasswordRequest.email, "Reset your password", token);
+        }
+    }
+    public void resetPassword(ResetPasswordRequest resetPasswordRequest){
+        long ttl = extractTTLFromToken(resetPasswordRequest.token);
+        if (isTokenValid(ttl)){
+            User user = userRepository.findByToken(resetPasswordRequest.token);
+            if (user == null){
+                throw new RuntimeException("Invalid token.");
+            } else {
+                if (resetPasswordRequest.password.equals(resetPasswordRequest.re_password)){
+                    user.setPassword(passwordEncoder.encode(resetPasswordRequest.password));
+                    user.setToken(null);
+                    userRepository.save(user);
+                } else {
+                    throw new PasswordMismatchException("Passwords do not match.");
+                }
+            }
+        } else {
+            throw new RuntimeException("Invalid token.");
         }
     }
 }
