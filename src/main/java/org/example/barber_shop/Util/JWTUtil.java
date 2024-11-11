@@ -79,4 +79,12 @@ public class JWTUtil {
         user.setRole(Role.valueOf(claims.get("role", String.class)));
         return user;
     }
+    public Object getValueFromJwt(String token, String key) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get(key);
+    }
 }

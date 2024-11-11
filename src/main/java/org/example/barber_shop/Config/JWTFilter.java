@@ -5,7 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Entity.LoggedOutToken;
 import org.example.barber_shop.Entity.User;
+import org.example.barber_shop.Repository.LoggedOutTokenRepository;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JWTFilter extends OncePerRequestFilter {
     private final JWTUtil jwtUtil;
+    private final LoggedOutTokenRepository loggedOutTokenRepository;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
@@ -26,14 +29,19 @@ public class JWTFilter extends OncePerRequestFilter {
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
-                if (jwtUtil.validateToken(token)) {
-                    User user = jwtUtil.getUserFromToken(token);
-                    SecurityUser securityUser = new SecurityUser(user);
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }else {
-                    throw new RuntimeException("Invalid token");
+                LoggedOutToken loggedOutToken = loggedOutTokenRepository.findByToken(token);
+                if (loggedOutToken == null){
+                    if (jwtUtil.validateToken(token)) {
+                        User user = jwtUtil.getUserFromToken(token);
+                        SecurityUser securityUser = new SecurityUser(user);
+                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }else {
+                        throw new RuntimeException("Invalid token.");
+                    }
+                } else {
+                    throw new RuntimeException("Token has been logged out.");
                 }
             }
             filterChain.doFilter(request, response);

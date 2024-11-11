@@ -8,6 +8,7 @@ import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.File.FileResponse;
 import org.example.barber_shop.DTO.User.*;
 import org.example.barber_shop.Entity.File;
+import org.example.barber_shop.Entity.LoggedOutToken;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Exception.EmailExistException;
 import org.example.barber_shop.Exception.PasswordMismatchException;
@@ -15,6 +16,7 @@ import org.example.barber_shop.Exception.PhoneExistException;
 import org.example.barber_shop.Mapper.FileMapper;
 import org.example.barber_shop.Mapper.UserMapper;
 import org.example.barber_shop.Repository.FileRepository;
+import org.example.barber_shop.Repository.LoggedOutTokenRepository;
 import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -43,6 +46,8 @@ public class UserService {
     private final FileUploadService fileUploadService;
     private final FileRepository fileRepository;
     private final FileMapper fileMapper;
+    private final LoggedOutTokenRepository loggedOutTokenRepository;
+
     @Value("${token_ttl}")
     private int tokenTtl;
 
@@ -155,5 +160,19 @@ public class UserService {
     }
     public List<UserResponse> getAllReceptionists(){
         return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_RECEPTIONIST));
+    }
+    public boolean logout(String authHeader){
+        String token = authHeader.substring(7);
+        LoggedOutToken loggedOutToken = new LoggedOutToken();
+        loggedOutToken.setUser(SecurityUtils.getCurrentUser());
+        loggedOutToken.setToken(token);
+        Object object = jwtUtil.getValueFromJwt(token, "exp");
+        if (object instanceof Integer expTime){
+            loggedOutToken.setExpTime(new Timestamp(expTime));
+            loggedOutTokenRepository.save(loggedOutToken);
+            return true;
+        } else {
+            return false;
+        }
     }
 }

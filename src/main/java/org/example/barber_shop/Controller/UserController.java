@@ -74,4 +74,16 @@ public class UserController {
                 HttpStatus.CONTINUE.value(), "ALL RECEPTIONISTS", userService.getAllReceptionists()
         );
     }
+    @GetMapping("/logout")
+    public ApiResponse<?> logout(@RequestHeader("Authorization") String authorizationHeader){
+        if (userService.logout(authorizationHeader)){
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "SUCCESS", "This token is disable from now."
+            );
+        } else {
+            return new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), "FAIL", "This token is still valid."
+            );
+        }
+    }
 }
