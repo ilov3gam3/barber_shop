@@ -34,7 +34,7 @@ public class JWTUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("name", user.getName());
         claims.put("email", user.getEmail());
-        claims.put("dob", user.getDob().toString());
+        claims.put("dob", user.getDob() == null ? null : user.getDob().toString());
         claims.put("phone", user.getPhone());
         claims.put("avatar", user.getAvatar().getUrl());
         claims.put("role", user.getRole());

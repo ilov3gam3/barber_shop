@@ -32,4 +32,11 @@ public class BookingController {
                 HttpStatus.OK.value(), "CONFIRM BOOKING", bookingService.confirmBooking(booking_id)
         );
     }
+
+    @GetMapping("/get-staff-work-schedule-in-week")
+    public ApiResponse<?> getStaffWorkScheduleWeek(@RequestParam(required = false) Integer week, @RequestParam(required = false) Integer year, @RequestParam long staff_id) {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "STAFF WORK SCHEDULE",bookingService.getStaffWorkScheduleInWeek(week, year, staff_id)
+            );
+    }
 }

@@ -2,6 +2,7 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
+import org.example.barber_shop.DTO.Booking.WorkScheduleResponse;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Mapper.BookingMapper;
 import org.example.barber_shop.Util.SecurityUtils;
@@ -12,8 +13,12 @@ import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.TimeUtil;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @org.springframework.stereotype.Service
@@ -100,5 +105,31 @@ public class BookingService {
         } else {
             throw new UserNotFoundException("Booking not found.");
         }
+    }
+
+    public LocalDate[] getStartAndEndOfWeek(int week, int year) {
+        LocalDate startOfYear = LocalDate.of(year, 1, 1);
+        WeekFields weekFields = WeekFields.of(Locale.getDefault());
+        LocalDate startDate = startOfYear
+                .with(weekFields.weekOfYear(), week)
+                .with(TemporalAdjusters.previousOrSame(weekFields.getFirstDayOfWeek()));
+
+        LocalDate endDate = startDate.plusDays(6);
+        return new LocalDate[]{startDate, endDate};
+    }
+
+    public List<WorkScheduleResponse> getStaffWorkScheduleInWeek(Integer week, Integer year, long staff_id){
+        if (week == null && year == null) {
+            LocalDate today = LocalDate.now();
+            WeekFields weekFields = WeekFields.of(Locale.getDefault());
+            week = today.get(weekFields.weekOfYear());
+            year = today.getYear();
+        } else if (week == null || year == null) {
+            throw new RuntimeException("Both week and year must be provided or neither.");
+        }
+        LocalDate[] weekDates = getStartAndEndOfWeek(week, year);
+        Timestamp startDate = Timestamp.valueOf(weekDates[0].atStartOfDay());
+        Timestamp endDate = Timestamp.valueOf(weekDates[1].atTime(23, 59, 59));
+        return bookingMapper.toWorkScheduleResponses(bookingRepository.findByStaff_IdAndStartTimeBetweenAndStatus(staff_id, startDate, endDate, BookingStatus.CONFIRMED));
     }
 }

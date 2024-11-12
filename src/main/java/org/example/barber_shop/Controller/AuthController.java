@@ -8,6 +8,9 @@ import org.example.barber_shop.DTO.User.RegisterRequest;
 import org.example.barber_shop.DTO.User.ResetPasswordRequest;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @PostMapping("/register")
     public ApiResponse<?> register(@RequestBody RegisterRequest registerRequest) {
@@ -62,6 +66,20 @@ public class AuthController {
         userService.resetPassword(resetPasswordRequest);
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "PASSWORD RESET", null
+        );
+    }
+    @GetMapping("/get-google-login-url")
+    public ApiResponse<?> getGoogleLoginUrl(){
+        OAuth2AuthorizationRequest authorizationRequest = OAuth2AuthorizationRequest
+                .authorizationCode()
+                .clientId("950893291709-9rqulakhl78cnlejkuofncru62p49epo.apps.googleusercontent.com")
+                .redirectUri("http://localhost:8080/login/oauth2/code/google")
+                .scope("openid", "profile", "email")
+                .build();
+
+        String loginUrl = authorizationRequest.getAuthorizationUri();
+        return new ApiResponse<>(
+            HttpStatus.OK.value(), "GOOGLE_LOGIN", loginUrl
         );
     }
 }

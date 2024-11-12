@@ -3,8 +3,6 @@ package org.example.barber_shop.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -22,6 +20,8 @@ public class BookingDetail extends DistributedEntity{
 
     @ManyToOne
     private Combo combo;
+
+    private long finalPrice;
 
     public BookingDetail(Booking booking, Service service) {
         this.booking = booking;

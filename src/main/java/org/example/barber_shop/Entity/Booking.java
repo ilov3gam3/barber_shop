@@ -33,4 +33,9 @@ public class Booking extends DistributedEntity{
 
     @OneToMany(mappedBy = "booking")
     private List<BookingDetail> bookingDetails;
+
+    private long totalPrice;
+
+    @ManyToOne
+    private Payment payment;
 }
