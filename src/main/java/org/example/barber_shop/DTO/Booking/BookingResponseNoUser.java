@@ -8,7 +8,7 @@ import org.example.barber_shop.DTO.User.UserResponse;
 import java.sql.Timestamp;
 import java.util.List;
 
-public class BookingResponse {
+public class BookingResponseNoUser {
     public long id;
     public BookingStatus status;
     public String note;

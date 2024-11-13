@@ -198,7 +198,7 @@ public class PaymentService {
                         totalAmount += temp_price;
                     }
                     if (totalAmount == amount){
-                        bookingRepository.saveAll(bookings);
+                        bookings = bookingRepository.saveAll(bookings);
                         for (Booking booking : bookings){
                             bookingDetailRepository.saveAll(booking.getBookingDetails());
                         }
@@ -208,6 +208,7 @@ public class PaymentService {
                         payment.setCardType(vnp_CardType);
                         payment.setBankTranNo(vnp_BankTranNo);
                         payment.setPaid_at(Timestamp.valueOf(paid_at));
+                        payment.setBookings(bookings);
                         paymentRepository.save(payment);
                         return "Payment success";
                     } else {

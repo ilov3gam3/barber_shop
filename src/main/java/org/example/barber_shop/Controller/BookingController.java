@@ -26,6 +26,12 @@ public class BookingController {
                 HttpStatus.OK.value(), "YOUR BOOKINGS", bookingService.getBookingsOfCustomers()
         );
     }
+    @GetMapping("/staff-get-bookings")
+    public ApiResponse<?> getBookingsOfStaff() {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "STAFF BOOKINGS", bookingService.getBookingsOfStaff()
+        );
+    }
     @GetMapping("/confirm-booking")
     public ApiResponse<?> confirmBooking(@RequestParam long booking_id){
         return new ApiResponse<>(

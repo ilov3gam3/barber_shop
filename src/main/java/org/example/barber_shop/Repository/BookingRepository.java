@@ -10,8 +10,10 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByCustomer_Id(Long customerId);
-    List<Booking> findByStaff_IdAndStatus(Long staffId, BookingStatus status);
+    List<Booking> findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(Long staffId, BookingStatus status, Timestamp startTime, Timestamp endTime);
     List<Booking> findByStaff_IdAndStartTimeBetweenAndStatus(Long staff_id, Timestamp startTime, Timestamp endTime, BookingStatus status);
     List<Booking> findAllByIdInAndCustomer_IdAndStatus(List<Long> id, Long customerId, BookingStatus status);
     List<Booking> findByIdIn(List<Long> id);
+    Booking findByIdAndStatusAndStaff_Id(Long id, BookingStatus status, Long staffId);
+    List<Booking> findByStaff_Id(Long staffId);
 }

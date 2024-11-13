@@ -2,12 +2,13 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
+import org.example.barber_shop.DTO.Booking.BookingResponseNoStaff;
+import org.example.barber_shop.DTO.Booking.BookingResponseNoUser;
 import org.example.barber_shop.DTO.Booking.WorkScheduleResponse;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Mapper.BookingMapper;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Booking.BookingRequest;
-import org.example.barber_shop.DTO.Booking.BookingResponse;
 import org.example.barber_shop.Exception.UserNotFoundException;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.TimeUtil;
@@ -33,22 +34,15 @@ public class BookingService {
     private final BookingMapper bookingMapper;
 
     public boolean isTimeValid(User staff, Timestamp startTime, Timestamp endTime) {
-        List<Booking> bookings = bookingRepository.findByStaff_IdAndStatus(staff.getId(), BookingStatus.CONFIRMED);
+        List<Booking> bookings = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.CONFIRMED, endTime, startTime);
         if (bookings.isEmpty()) {
             return true;
         } else {
-            for (Booking booking : bookings) {
-                Timestamp existingStartTime = booking.getStartTime();
-                Timestamp existingEndTime = booking.getEndTime();
-                if (startTime.before(existingEndTime) && endTime.after(existingStartTime)) {
-                    return false;
-                }
-            }
+            return false;
         }
-        return true;
     }
 
-    public BookingResponse addBooking(BookingRequest bookingRequest) {
+    public BookingResponseNoUser addBooking(BookingRequest bookingRequest) {
         Optional<User> staff = userRepository.findById(bookingRequest.staff_id);
         if (staff.isPresent()) {
             User staff_checked = staff.get();
@@ -90,20 +84,27 @@ public class BookingService {
             throw new UserNotFoundException("Staff not found.");
         }
     }
-    public List<BookingResponse> getBookingsOfCustomers(){
+    public List<BookingResponseNoUser> getBookingsOfCustomers(){
         long userId = SecurityUtils.getCurrentUserId();
         List<Booking> bookings = bookingRepository.findByCustomer_Id(userId);
         return bookingMapper.toResponses(bookings);
     }
-    public BookingResponse confirmBooking(long booking_id){
-        Optional<Booking> booking = bookingRepository.findById(booking_id);
-        if (booking.isPresent()) {
-            Booking checkedBooking = booking.get();
-            checkedBooking.setStatus(BookingStatus.CONFIRMED);
-            bookingRepository.save(checkedBooking);
-            return bookingMapper.toResponse(checkedBooking);
+    public BookingResponseNoUser confirmBooking(long booking_id){
+        long staff_id = SecurityUtils.getCurrentUserId();
+        Booking booking = bookingRepository.findByIdAndStatusAndStaff_Id(booking_id, BookingStatus.PENDING, staff_id);
+        System.out.println(booking == null);
+        if (booking != null) {
+            List<Booking> confirmedBookingsOfAStaff = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff_id, BookingStatus.CONFIRMED, booking.getEndTime(), booking.getStartTime());
+            System.out.println(confirmedBookingsOfAStaff.size());
+            if (confirmedBookingsOfAStaff.isEmpty()) {
+                booking.setStatus(BookingStatus.CONFIRMED);
+                booking = bookingRepository.save(booking);
+                return bookingMapper.toResponse(booking);
+            } else {
+                throw new RuntimeException("You already has a confirmed booking in this time.");
+            }
         } else {
-            throw new UserNotFoundException("Booking not found.");
+            throw new RuntimeException("Booking not found, or it's not on pending status.");
         }
     }
 
@@ -131,5 +132,9 @@ public class BookingService {
         Timestamp startDate = Timestamp.valueOf(weekDates[0].atStartOfDay());
         Timestamp endDate = Timestamp.valueOf(weekDates[1].atTime(23, 59, 59));
         return bookingMapper.toWorkScheduleResponses(bookingRepository.findByStaff_IdAndStartTimeBetweenAndStatus(staff_id, startDate, endDate, BookingStatus.CONFIRMED));
+    }
+    public List<BookingResponseNoStaff> getBookingsOfStaff(){
+        long staffId = SecurityUtils.getCurrentUserId();
+        return bookingMapper.toResponseNoStaff(bookingRepository.findByStaff_Id(staffId));
     }
 }

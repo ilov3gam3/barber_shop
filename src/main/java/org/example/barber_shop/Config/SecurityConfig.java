@@ -46,9 +46,17 @@ public class SecurityConfig {
     private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result"};
     private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo"};
     private final String[] customerApi = {"/api/booking/book", "/api/booking/customer-get-bookings", "/api/payment/get-vnpay-url"};
-    private final String[] staffApi = {"/api/booking/confirm-booking"};
+    private final String[] staffApi = {"/api/booking/confirm-booking", "/api/booking/staff-get-bookings"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
+        http.cors(cors -> cors.configurationSource(request -> {
+            CorsConfiguration config = new CorsConfiguration();
+            config.addAllowedOriginPattern("*");
+            config.addAllowedMethod("*");
+            config.addAllowedHeader("*");
+            config.setAllowCredentials(true);
+            return config;
+        }));
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(request -> request
                 .requestMatchers(publicApi).permitAll()
                 .requestMatchers(adminApi).hasRole("ADMIN")
@@ -100,7 +108,7 @@ public class SecurityConfig {
         String jwt = jwtUtil.generateToken(user);
         response.sendRedirect(front_end_server + "/token?token=" + jwt);
     }
-    @Bean
+    /*@Bean
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.addAllowedOriginPattern("*");
@@ -110,7 +118,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
         return new CorsFilter(urlBasedCorsConfigurationSource);
-    }
+    }*/
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
