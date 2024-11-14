@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.sql.Date;
+import java.time.LocalTime;
 import java.util.List;
 
 @Component
@@ -20,6 +21,7 @@ public class SeederService implements CommandLineRunner {
     private final ServiceTypeRepository serviceTypeRepository;
     private final ServiceRepository serviceRepository;
     private final ComboRepository comboRepository;
+    private final ShiftRepository shiftRepository;
     @Override
     public void run(String... args) throws Exception {
         if (userRepository.count() == 0){
@@ -27,6 +29,24 @@ public class SeederService implements CommandLineRunner {
         }
         if (serviceTypeRepository.count() == 0 && comboRepository.count() == 0) {
             seedDefaultTypesServicesCombos();
+        }
+        if (shiftRepository.count() == 0) {
+            Shift morning = new Shift();
+            morning.setName("Morning shift");
+            morning.setStartTime(LocalTime.of(7, 0));
+            morning.setEndTime(LocalTime.of(12, 0));
+
+            Shift afternoon = new Shift();
+            afternoon.setName("Afternoon shift");
+            afternoon.setStartTime(LocalTime.of(12, 0));
+            afternoon.setEndTime(LocalTime.of(17, 0));
+
+            Shift night = new Shift();
+            night.setName("Night shift");
+            night.setStartTime(LocalTime.of(17, 0));
+            night.setEndTime(LocalTime.of(22, 0));
+
+            shiftRepository.saveAll(List.of(morning, afternoon, night));
         }
         System.out.println("============seed done============");
     }

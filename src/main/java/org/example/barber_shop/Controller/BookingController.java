@@ -45,4 +45,10 @@ public class BookingController {
                 HttpStatus.OK.value(), "STAFF WORK SCHEDULE",bookingService.getStaffWorkScheduleInWeek(week, year, staff_id)
             );
     }
+    /*@PostMapping("/admin-book")
+    public ApiResponse<?> adminBook(@RequestBody BookingRequest bookingRequest) {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "ADMIN BOOK SUCCESS"
+        )
+    }*/
 }

@@ -84,6 +84,9 @@ public class BookingService {
             throw new UserNotFoundException("Staff not found.");
         }
     }
+    /*public BookingResponseNoUser adminAddBooking(BookingRequest bookingRequest){
+
+    }*/
     public List<BookingResponseNoUser> getBookingsOfCustomers(){
         long userId = SecurityUtils.getCurrentUserId();
         List<Booking> bookings = bookingRepository.findByCustomer_Id(userId);

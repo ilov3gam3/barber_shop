@@ -26,8 +26,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.io.IOException;
 
@@ -44,7 +42,7 @@ public class SecurityConfig {
     @Value("${front_end_server}")
     private String front_end_server;
     private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result"};
-    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo"};
+    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/**"};
     private final String[] customerApi = {"/api/booking/book", "/api/booking/customer-get-bookings", "/api/payment/get-vnpay-url"};
     private final String[] staffApi = {"/api/booking/confirm-booking", "/api/booking/staff-get-bookings"};
     @Bean
@@ -108,17 +106,6 @@ public class SecurityConfig {
         String jwt = jwtUtil.generateToken(user);
         response.sendRedirect(front_end_server + "/token?token=" + jwt);
     }
-    /*@Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOriginPattern("*");
-        corsConfiguration.addAllowedMethod("*");
-        corsConfiguration.addAllowedHeader("*");
-        corsConfiguration.setAllowCredentials(true); // Allow credentials
-        UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
-        urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
-        return new CorsFilter(urlBasedCorsConfigurationSource);
-    }*/
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
