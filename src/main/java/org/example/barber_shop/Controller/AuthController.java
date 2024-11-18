@@ -6,19 +6,20 @@ import org.example.barber_shop.DTO.User.ForgotPasswordRequest;
 import org.example.barber_shop.DTO.User.LoginRequest;
 import org.example.barber_shop.DTO.User.RegisterRequest;
 import org.example.barber_shop.DTO.User.ResetPasswordRequest;
+import org.example.barber_shop.Service.TemporaryCodeService;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
-    private final ClientRegistrationRepository clientRegistrationRepository;
+    private final TemporaryCodeService temporaryCodeService;
 
     @PostMapping("/register")
     public ApiResponse<?> register(@RequestBody RegisterRequest registerRequest) {
@@ -80,6 +81,14 @@ public class AuthController {
         String loginUrl = authorizationRequest.getAuthorizationUri();
         return new ApiResponse<>(
             HttpStatus.OK.value(), "GOOGLE_LOGIN", loginUrl
+        );
+    }
+    @PostMapping("/token-exchange")
+    public ApiResponse<?> tokenExchange(@RequestBody Map<String, String> request){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "LOGIN_SUCCESS",
+                temporaryCodeService.handleExchangeRequest(request)
         );
     }
 }

@@ -7,6 +7,7 @@ import org.example.barber_shop.Entity.File;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Repository.FileRepository;
 import org.example.barber_shop.Repository.UserRepository;
+import org.example.barber_shop.Service.TemporaryCodeService;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -37,12 +38,12 @@ public class SecurityConfig {
 
     private final JWTFilter jwtFilter;
     private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
     private final FileRepository fileRepository;
+    private final TemporaryCodeService temporaryCodeService;
     @Value("${front_end_server}")
     private String front_end_server;
-    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result"};
-    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/**"};
+    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-shifts-of-a-staff-in-week"};
+    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/staff-shift/add-staff-shift", "/api/shift-shift/admin-get-all-staff-shifts-in-week", "/api/shift/**", "/api/booking/admin-book"};
     private final String[] customerApi = {"/api/booking/book", "/api/booking/customer-get-bookings", "/api/payment/get-vnpay-url"};
     private final String[] staffApi = {"/api/booking/confirm-booking", "/api/booking/staff-get-bookings"};
     @Bean
@@ -103,8 +104,8 @@ public class SecurityConfig {
             user.setAvatar(file);
             user = userRepository.save(user);
         }
-        String jwt = jwtUtil.generateToken(user);
-        response.sendRedirect(front_end_server + "/token?token=" + jwt);
+        String code = temporaryCodeService.generateCode(String.valueOf(user.getId()));
+        response.sendRedirect(front_end_server + "/?code=" + code);
     }
     @Bean
     public PasswordEncoder passwordEncoder(){

@@ -37,5 +37,6 @@ public class Booking extends DistributedEntity{
     private long totalPrice;
 
     @ManyToOne
+    @JoinColumn(name = "payment_id")
     private Payment payment;
 }

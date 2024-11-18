@@ -26,3 +26,5 @@ springdoc.swagger-ui.urls[0].name=Local
 springdoc.swagger-ui.urls[0].url=http://localhost:8080/v3/api-docs
 springdoc.swagger-ui.urls[1].name=Production
 springdoc.swagger-ui.urls[1].url=https://52.187.14.110/v3/api-docs
+
+front_end_server=http://localhost:3000

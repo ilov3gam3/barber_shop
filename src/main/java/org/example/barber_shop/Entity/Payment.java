@@ -21,7 +21,7 @@ public class Payment extends DistributedEntity{
     @ManyToOne
     private User user;
 
-    @OneToMany
+    @OneToMany(mappedBy = "payment")
     private List<Booking> bookings;
 
     private long amount;
