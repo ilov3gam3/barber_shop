@@ -9,6 +9,7 @@ import org.example.barber_shop.DTO.User.ResetPasswordRequest;
 import org.example.barber_shop.Service.TemporaryCodeService;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ import java.util.Map;
 public class AuthController {
     private final UserService userService;
     private final TemporaryCodeService temporaryCodeService;
-
+    private final SimpMessagingTemplate simpMessagingTemplate;
     @PostMapping("/register")
     public ApiResponse<?> register(@RequestBody RegisterRequest registerRequest) {
         return new ApiResponse<>(
@@ -90,5 +91,10 @@ public class AuthController {
                 "LOGIN_SUCCESS",
                 temporaryCodeService.handleExchangeRequest(request)
         );
+    }
+
+    @GetMapping("/send-ws-auth")
+    public void send(@RequestParam String username, @RequestParam String message){
+        simpMessagingTemplate.convertAndSendToUser(username, "/topic", message);
     }
 }

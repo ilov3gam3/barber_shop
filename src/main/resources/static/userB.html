@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+<!--
+eyJhbGciOiAiSFM1MTIiLCJ0eXAiOiAiSldUIn0.eyJpYXQiOiAxNzIyNzUxMjgxODc3LCAiZXhwIjogMTcyMzE4MzI4MTg3NywgImlkIjogMTUsICJlbWFpbCI6ICJuZ29lbkBnbWFpbC5jb20iLCAibmFtZSI6ICJUcuG6p24gUXVhbmcgTWluaCIsImF2YXRhciI6ICJodHRwczovL2ZhdWN0aW9uMS5ibG9iLmNvcmUud2luZG93cy5uZXQvZGF0YS9hdnQtNC5qcGciLCJyb2xlIjogIlJPTEVfVVNFUiJ9.739a1b0a509d03e313730e8528d03e5ac61771f84d3f03479b0c8505d57ec4bf130c2887eb609c95cfaa95e3214d0052898a8ae68a21bf241c8bccf0fed57fb8
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    const socket = new SockJS('/websocket');
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = false
+    stompClient.connect({Authorization: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiUk9MRV9DVVNUT01FUiIsInBob25lIjoiMDIyMzQ1Njc4OCIsImRvYiI6IjIwMjQtMTEtMTgiLCJuYW1lIjoiY3VzdG9tZXIgMiIsImF2YXRhciI6Imh0dHBzOi8vaS5pYmIuY28vMmM0a0gzYi9kZWZhdWx0LWF2YXRhci5wbmciLCJlbWFpbCI6ImN1c3RvbWVyMkBnbWFpbC5jb20iLCJzdWIiOiI5IiwiaWF0IjoxNzMxOTI1OTM3LCJleHAiOjE3MzMyMjE5Mzd9.yXuGTj5OSu_KajmU-VMtnevp7OpI7WNI-irj32Z_GfxUHkx7VbCn7Cs63OHTlVsEBkaGZw82U-4OG5dBCjrYgQ'}, (frame) => {
+        stompClient.subscribe('/user/topic', (notification) => {
+            console.log(notification);
+        });
+    });
+</script>
+</html>

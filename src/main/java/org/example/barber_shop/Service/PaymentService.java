@@ -32,7 +32,6 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final BookingDetailRepository bookingDetailRepository;
-    private final VNPayUtils vNPayUtils;
     @Value("${vnp_TmnCode}")
     private String VNP_TMN_CODE;
     @Value("${vnp_ReturnUrl}")
@@ -46,7 +45,7 @@ public class PaymentService {
         if (paymentRequest.bookingIds != null){
             for (int i = 0; i < paymentRequest.bookingIds.size(); i++) {
                 if (paymentRequest.bookingIds.get(i) == null){
-                    throw new RuntimeException("Booking ids are null or the booking is not confirmed.");
+                    throw new RuntimeException("Booking ids can not be null.");
                 }
             }
             Long customer_id = SecurityUtils.getCurrentUserId();
@@ -96,13 +95,11 @@ public class PaymentService {
                 Iterator itr = fieldNames.iterator();
                 while (itr.hasNext()) {
                     String fieldName = (String) itr.next();
-                    String fieldValue = (String) vnp_Params.get(fieldName);
+                    String fieldValue = vnp_Params.get(fieldName);
                     if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                        //Build hash data
                         hashData.append(fieldName);
                         hashData.append('=');
                         hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                        //Build query
                         query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
                         query.append('=');
                         query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
@@ -117,13 +114,12 @@ public class PaymentService {
                 queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
                 Payment payment = new Payment();
                 payment.setAmount(amount/100);
-                payment.setUser(SecurityUtils.getCurrentUser());
                 payment.setTxnRef(vnp_TxnRef);
                 payment.setOrderInfo(vnp_OrderInfo);
                 paymentRepository.save(payment);
                 return VNP_PAY_URL + "?" + queryUrl;
             } else {
-                throw new RuntimeException("Booking ids are null or the booking is not confirmed.");
+                throw new RuntimeException("This booking is paid, or not in CONFIRMED status.");
             }
         } else {
             throw new RuntimeException("Booking ids are null.");
@@ -151,7 +147,7 @@ public class PaymentService {
         for (Enumeration<?> params = httpServletRequest.getParameterNames(); params.hasMoreElements(); ) {
             String fieldName = URLEncoder.encode((String) params.nextElement(), StandardCharsets.US_ASCII.toString());
             String fieldValue = URLEncoder.encode(httpServletRequest.getParameter(fieldName), StandardCharsets.US_ASCII.toString());
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+            if ((fieldValue != null) && (!fieldValue.isEmpty())) {
                 fields.put(fieldName, fieldValue);
             }
         }
@@ -209,7 +205,12 @@ public class PaymentService {
                         payment.setBankTranNo(vnp_BankTranNo);
                         payment.setPaid_at(Timestamp.valueOf(paid_at));
                         payment.setBookings(bookings);
-                        paymentRepository.save(payment);
+                        payment = paymentRepository.save(payment);
+                        for (Booking booking : bookings){
+                            booking.setStatus(BookingStatus.PAID);
+                            booking.setPayment(payment);
+                        }
+                        bookingRepository.saveAll(bookings);
                         return "Payment success";
                     } else {
                         throw new RuntimeException("The money u paid and the money in bookings not matched, please contact admin.");

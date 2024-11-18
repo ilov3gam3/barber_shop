@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class ShiftController {
     private final ShiftService shiftService;
 
-    @GetMapping("/get-all-shifts")
+    @GetMapping("")
     public ApiResponse<?> getAllShifts() {
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "ALL SHIFTS", shiftService.getAllShift()

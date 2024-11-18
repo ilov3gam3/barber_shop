@@ -134,10 +134,8 @@ public class BookingService {
     public BookingResponseNoUser confirmBooking(long booking_id){
         long staff_id = SecurityUtils.getCurrentUserId();
         Booking booking = bookingRepository.findByIdAndStatusAndStaff_Id(booking_id, BookingStatus.PENDING, staff_id);
-        System.out.println(booking == null);
         if (booking != null) {
             List<Booking> confirmedBookingsOfAStaff = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff_id, BookingStatus.CONFIRMED, booking.getEndTime(), booking.getStartTime());
-            System.out.println(confirmedBookingsOfAStaff.size());
             if (confirmedBookingsOfAStaff.isEmpty()) {
                 booking.setStatus(BookingStatus.CONFIRMED);
                 booking = bookingRepository.save(booking);
@@ -231,7 +229,6 @@ public class BookingService {
                     }
                     booking.setTotalPrice(temp_price);
                     payment.setAmount(temp_price);
-                    payment.setUser(customer);
                     payment.setPaid_at(new Timestamp(System.currentTimeMillis()));
                     payment.setCardType("CASH");
                     paymentRepository.save(payment);
@@ -246,6 +243,20 @@ public class BookingService {
             }
         } else {
             throw new UserNotFoundException("Staff not found.");
+        }
+    }
+    public void cancelBooking(long id){
+        Optional<Booking> booking = bookingRepository.findById(id);
+        if (booking.isPresent()) {
+            Booking checkedBooking = booking.get();
+            if (checkedBooking.getStatus() == BookingStatus.PENDING || checkedBooking.getStatus() == BookingStatus.CONFIRMED){
+                checkedBooking.setStatus(BookingStatus.CANCELLED);
+                bookingRepository.save(checkedBooking);
+            } else {
+                throw new RuntimeException("Booking can only be canceled if in PENDING status");
+            }
+        } else {
+            throw new RuntimeException("Booking not found.");
         }
     }
 }

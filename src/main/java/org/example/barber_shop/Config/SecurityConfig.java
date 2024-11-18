@@ -3,6 +3,7 @@ package org.example.barber_shop.Config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.Entity.File;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Repository.FileRepository;
@@ -42,10 +43,11 @@ public class SecurityConfig {
     private final TemporaryCodeService temporaryCodeService;
     @Value("${front_end_server}")
     private String front_end_server;
-    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-shifts-of-a-staff-in-week"};
-    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/staff-shift/add-staff-shift", "/api/shift-shift/admin-get-all-staff-shifts-in-week", "/api/shift/**", "/api/booking/admin-book"};
+    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-receptionists", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**"};
+    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift"};
     private final String[] customerApi = {"/api/booking/book", "/api/booking/customer-get-bookings", "/api/payment/get-vnpay-url"};
     private final String[] staffApi = {"/api/booking/confirm-booking", "/api/booking/staff-get-bookings"};
+    private final String[] staffCustomerApi = {"/api/booking/cancel/**"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.cors(cors -> cors.configurationSource(request -> {
@@ -58,6 +60,7 @@ public class SecurityConfig {
         }));
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(request -> request
                 .requestMatchers(publicApi).permitAll()
+                .requestMatchers(staffCustomerApi).hasAnyRole("CUSTOMER", "STAFF")
                 .requestMatchers(adminApi).hasRole("ADMIN")
                 .requestMatchers(customerApi).hasRole("CUSTOMER")
                 .requestMatchers(staffApi).hasRole("STAFF")

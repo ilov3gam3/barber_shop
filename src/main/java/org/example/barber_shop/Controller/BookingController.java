@@ -51,4 +51,11 @@ public class BookingController {
                 HttpStatus.OK.value(), "ADMIN BOOK SUCCESS", bookingService.adminBook(bookingRequest)
         );
     }
+    @GetMapping("/cancel/{id}")
+    public ApiResponse<?> cancelBooking(@PathVariable Long id) {
+        bookingService.cancelBooking(id);
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING CANCELED", null
+        );
+    }
 }

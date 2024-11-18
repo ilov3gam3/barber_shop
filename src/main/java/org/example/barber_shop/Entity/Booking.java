@@ -15,9 +15,10 @@ import java.util.List;
 @Table(name = "bookings")
 @ToString
 public class Booking extends DistributedEntity{
+    @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String note;
 
     @ManyToOne
