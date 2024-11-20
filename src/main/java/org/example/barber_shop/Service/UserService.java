@@ -165,9 +165,6 @@ public class UserService {
     public List<UserResponse> getAllAdmins(){
         return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_ADMIN));
     }
-    public List<UserResponse> getAllReceptionists(){
-        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_RECEPTIONIST));
-    }
     public boolean logout(String authHeader){
         String token = authHeader.substring(7);
         LoggedOutToken loggedOutToken = new LoggedOutToken();

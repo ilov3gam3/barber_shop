@@ -1,5 +1,6 @@
 package org.example.barber_shop.Mapper;
 
+import org.example.barber_shop.DTO.Booking.BookingResponseAdmin;
 import org.example.barber_shop.DTO.Booking.BookingResponseNoStaff;
 import org.example.barber_shop.DTO.Booking.BookingResponseNoUser;
 import org.example.barber_shop.DTO.Booking.WorkScheduleResponse;
@@ -16,4 +17,5 @@ public interface BookingMapper {
     List<WorkScheduleResponse> toWorkScheduleResponses(List<Booking> bookings);
     @Mapping(source = "customer", target = "customer")
     List<BookingResponseNoStaff> toResponseNoStaff(List<Booking> bookings);
+    List<BookingResponseAdmin> toResponseAdmin(List<Booking> bookings);
 }

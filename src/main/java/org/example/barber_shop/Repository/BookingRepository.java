@@ -3,6 +3,7 @@ package org.example.barber_shop.Repository;
 
 import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.Entity.Booking;
+import org.example.barber_shop.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.sql.Timestamp;
@@ -17,4 +18,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Booking findByIdAndStatusAndStaff_Id(Long id, BookingStatus status, Long staffId);
     List<Booking> findByStaff_Id(Long staffId);
     List<Booking> findByStatusAndStartTimeBetween(BookingStatus bookingStatus, Timestamp startTime, Timestamp endTime);
+    Booking findByIdAndCustomerAndStatus(Long id, User customer, BookingStatus status);
 }

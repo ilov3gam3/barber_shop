@@ -1,9 +1,13 @@
 package org.example.barber_shop.Controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.ApiResponse;
 import org.example.barber_shop.DTO.Booking.BookingRequest;
+import org.example.barber_shop.DTO.Booking.BookingUpdateRequest;
+import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Service.BookingService;
+import org.example.barber_shop.Util.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,18 +24,24 @@ public class BookingController {
                 HttpStatus.CREATED.value(), "BOOK SUCCESS", bookingService.addBooking(bookingRequest)
         );
     }
-    @GetMapping("/customer-get-bookings")
+    @GetMapping("")
     public ApiResponse<?> getBookings() {
-        return new ApiResponse<>(
-                HttpStatus.OK.value(), "YOUR BOOKINGS", bookingService.getBookingsOfCustomers()
-        );
+        User user = SecurityUtils.getCurrentUser();
+        if (user.getRole() == Role.ROLE_ADMIN){
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "ALL BOOKINGS", bookingService.adminGetBookings()
+            );
+        } else if (user.getRole() == Role.ROLE_STAFF) {
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "STAFF BOOKINGS", bookingService.getBookingsOfStaff()
+            );
+        } else {
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "YOUR BOOKINGS", bookingService.getBookingsOfCustomers()
+            );
+        }
     }
-    @GetMapping("/staff-get-bookings")
-    public ApiResponse<?> getBookingsOfStaff() {
-        return new ApiResponse<>(
-                HttpStatus.OK.value(), "STAFF BOOKINGS", bookingService.getBookingsOfStaff()
-        );
-    }
+
     @GetMapping("/confirm-booking")
     public ApiResponse<?> confirmBooking(@RequestParam long booking_id){
         return new ApiResponse<>(
@@ -56,6 +66,18 @@ public class BookingController {
         bookingService.cancelBooking(id);
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "BOOKING CANCELED", null
+        );
+    }
+    @PutMapping("/update-booking")
+    public ApiResponse<?> updateBooking(@RequestBody BookingUpdateRequest bookingUpdateRequest) {
+        System.out.println(bookingUpdateRequest.bookingId);
+        System.out.println(bookingUpdateRequest.staff_id);
+        System.out.println(bookingUpdateRequest.note);
+        System.out.println(bookingUpdateRequest.startTime);
+        System.out.println(bookingUpdateRequest.serviceIds);
+        System.out.println(bookingUpdateRequest.comboIds);
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING UPDATED", bookingService.updateBooking(bookingUpdateRequest)
         );
     }
 }

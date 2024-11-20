@@ -2,16 +2,15 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
-import org.example.barber_shop.DTO.Booking.BookingResponseNoStaff;
-import org.example.barber_shop.DTO.Booking.BookingResponseNoUser;
-import org.example.barber_shop.DTO.Booking.WorkScheduleResponse;
+import org.example.barber_shop.Constants.NotificationType;
+import org.example.barber_shop.DTO.Booking.*;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Mapper.BookingMapper;
 import org.example.barber_shop.Util.SecurityUtils;
-import org.example.barber_shop.DTO.Booking.BookingRequest;
 import org.example.barber_shop.Exception.UserNotFoundException;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.TimeUtil;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -32,6 +31,8 @@ public class BookingService {
     private final BookingMapper bookingMapper;
     private final StaffShiftRepository staffShiftRepository;
     private final PaymentRepository paymentRepository;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final NotificationRepository notificationRepository;
     public boolean isTimeValid(User staff, Timestamp startTime, Timestamp endTime) {
         List<Booking> bookings = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.CONFIRMED, endTime, startTime);
         return bookings.isEmpty();
@@ -97,6 +98,7 @@ public class BookingService {
             if (isTimeValid(staff_checked, bookingRequest.startTime, endTime)) {
                 if (isTimeInAssignedShift(staff_checked, bookingRequest.startTime, endTime)) {
                     User customer = SecurityUtils.getCurrentUser();
+                    System.out.println(customer.getId());
                     Booking booking = new Booking();
                     booking.setStatus(BookingStatus.PENDING);
                     booking.setCustomer(customer);
@@ -139,6 +141,18 @@ public class BookingService {
             if (confirmedBookingsOfAStaff.isEmpty()) {
                 booking.setStatus(BookingStatus.CONFIRMED);
                 booking = bookingRepository.save(booking);
+
+                Notification notification = new Notification();
+                notification.setUser(booking.getCustomer());
+                notification.setType(NotificationType.UNPAID_BOOKING_REMINDER);
+                notification.setTitle("Booking confirmed");
+                notification.setMessage(booking.getStaff().getName() + " has confirm your booking. You can pay for the booking now.");
+                notification.setTargetUrl(""); // Optionally, link to payment page
+                notification.setSeen(false);
+                notification = notificationRepository.save(notification);
+                notification.setUser(null);
+                simpMessagingTemplate.convertAndSendToUser(booking.getCustomer().getEmail(), "/topic", notification);
+                System.out.println("message sent to " + booking.getCustomer().getEmail());
                 return bookingMapper.toResponse(booking);
             } else {
                 throw new RuntimeException("You already has a confirmed booking in this time.");
@@ -258,5 +272,56 @@ public class BookingService {
         } else {
             throw new RuntimeException("Booking not found.");
         }
+    }
+    public BookingResponseNoUser updateBooking(BookingUpdateRequest bookingUpdateRequest){
+        User user = SecurityUtils.getCurrentUser();
+        Booking booking = bookingRepository.findByIdAndCustomerAndStatus(bookingUpdateRequest.bookingId, user, BookingStatus.PENDING);
+        if (booking != null) {
+            Optional<User> staff = userRepository.findById(bookingUpdateRequest.staff_id);
+            if (staff.isPresent()) {
+                User staff_checked = staff.get();
+                booking.setStaff(staff_checked);
+                List<Service> services = serviceRepository.findAllById(bookingUpdateRequest.serviceIds);
+                List<Combo> combos = comboRepository.findAllById(bookingUpdateRequest.comboIds);
+                int tempTime = 0;
+                for (Service service : services) {
+                    tempTime += service.getEstimateTime();
+                }
+                for (Combo combo : combos) {
+                    tempTime += combo.getEstimateTime();
+                }
+                Timestamp endTime = TimeUtil.calculateEndTime(bookingUpdateRequest.startTime, tempTime);
+                if (isTimeValid(staff_checked, bookingUpdateRequest.startTime, endTime)){
+                    if (isTimeInAssignedShift(staff_checked, bookingUpdateRequest.startTime, endTime)){
+                        booking.setNote(bookingUpdateRequest.note);
+                        booking.setStartTime(bookingUpdateRequest.startTime);
+                        booking.setEndTime(endTime);
+                        List<BookingDetail> newBookingDetails = new ArrayList<>();
+                        for (Service service : services) {
+                            newBookingDetails.add(new BookingDetail(booking, service));
+                        }
+                        for (Combo combo : combos) {
+                            newBookingDetails.add(new BookingDetail(booking, combo));
+                        }
+                        List<BookingDetail> oldBookingDetails = booking.getBookingDetails();
+                        bookingDetailRepository.deleteAll(oldBookingDetails);
+                        newBookingDetails = bookingDetailRepository.saveAll(newBookingDetails);
+                        booking.setBookingDetails(newBookingDetails);
+                        return bookingMapper.toResponse(bookingRepository.save(booking));
+                    } else {
+                        throw new RuntimeException("Staff has no shift on this time.");
+                    }
+                } else {
+                    throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
+                }
+            } else {
+                throw new UserNotFoundException("Staff not found.");
+            }
+        } else {
+            throw new RuntimeException("Booking not found or can not be update now.");
+        }
+    }
+    public List<BookingResponseAdmin> adminGetBookings(){
+        return bookingMapper.toResponseAdmin(bookingRepository.findAll());
     }
 }

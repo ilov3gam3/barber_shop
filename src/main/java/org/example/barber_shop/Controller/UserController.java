@@ -68,12 +68,6 @@ public class UserController {
                 HttpStatus.CONTINUE.value(), "ALL CUSTOMERS", userService.getAllCustomers()
         );
     }
-    @GetMapping("/get-all-receptionists")
-    public ApiResponse<?> getAllReceptionists() {
-        return new ApiResponse<>(
-                HttpStatus.CONTINUE.value(), "ALL RECEPTIONISTS", userService.getAllReceptionists()
-        );
-    }
     @GetMapping("/logout")
     public ApiResponse<?> logout(@RequestHeader("Authorization") String authorizationHeader){
         if (userService.logout(authorizationHeader)){

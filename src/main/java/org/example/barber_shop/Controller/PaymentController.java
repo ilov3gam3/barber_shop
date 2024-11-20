@@ -25,7 +25,7 @@ public class PaymentController {
     @GetMapping("/vnpay-result")
     public ApiResponse<?> getVNPayResult(HttpServletRequest request) throws UnsupportedEncodingException {
         return new ApiResponse<>(
-                HttpStatus.OK.value(), "HMM", paymentService.handleVnpayResult(request)
+                HttpStatus.OK.value(), "PAYMENT", paymentService.handleVnpayResult(request)
         );
     }
 }

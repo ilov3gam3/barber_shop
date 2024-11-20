@@ -2,10 +2,7 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.Role;
-import org.example.barber_shop.DTO.Shift.AdminShiftResponse;
-import org.example.barber_shop.DTO.Shift.ShiftRequest;
-import org.example.barber_shop.DTO.Shift.StaffShiftRequest;
-import org.example.barber_shop.DTO.Shift.StaffShiftResponse;
+import org.example.barber_shop.DTO.Shift.*;
 import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Entity.StaffShift;
 import org.example.barber_shop.Entity.User;
@@ -36,19 +33,14 @@ public class ShiftService {
             Shift checkedShift = shift.get();
             User user = userRepository.findByIdAndRole(shiftRequest.staffId, Role.ROLE_STAFF);
             if (user != null){
-                StaffShift checkExist = staffShiftRepository.findByDateAndShift(shiftRequest.date, checkedShift);
-                if (checkExist == null){
-                    StaffShift staffShift = new StaffShift();
-                    staffShift.setStaff(user);
-                    staffShift.setShift(checkedShift);
-                    staffShift.setStartTime(checkedShift.getStartTime());
-                    staffShift.setEndTime(checkedShift.getEndTime());
-                    staffShift.setDate(shiftRequest.date);
-                    staffShift = staffShiftRepository.save(staffShift);
-                    return staffShiftMapper.toStaffShiftResponse(staffShift);
-                } else {
-                    throw new RuntimeException("Already have a staff working in this shift.");
-                }
+                StaffShift staffShift = new StaffShift();
+                staffShift.setStaff(user);
+                staffShift.setShift(checkedShift);
+                staffShift.setStartTime(checkedShift.getStartTime());
+                staffShift.setEndTime(checkedShift.getEndTime());
+                staffShift.setDate(shiftRequest.date);
+                staffShift = staffShiftRepository.save(staffShift);
+                return staffShiftMapper.toStaffShiftResponse(staffShift);
             } else {
                 throw new RuntimeException("Invalid staff id.");
             }
@@ -101,6 +93,22 @@ public class ShiftService {
             return shiftRepository.save(checkedShift);
         } else {
             throw new RuntimeException("Invalid shift id.");
+        }
+    }
+    public Shift addShift(AddShiftRequest addShiftRequest){
+        Shift shift = new Shift();
+        shift.setName(addShiftRequest.name);
+        shift.setStartTime(addShiftRequest.startTime);
+        shift.setEndTime(addShiftRequest.endTime);
+        return shiftRepository.save(shift);
+    }
+    public boolean deleteShift(long shiftId){
+        Optional<Shift> shift = shiftRepository.findById(shiftId);
+        if (shift.isPresent()) {
+            shiftRepository.delete(shift.get());
+            return true;
+        } else {
+            return false;
         }
     }
 }

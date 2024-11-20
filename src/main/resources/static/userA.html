@@ -5,18 +5,15 @@
     <title>Title</title>
 </head>
 <body>
-
+<h1>customer 1</h1>
 </body>
-<!--
-eyJhbGciOiAiSFM1MTIiLCJ0eXAiOiAiSldUIn0.eyJpYXQiOiAxNzIyNzUxMjQ1NzM2LCAiZXhwIjogMTcyMzE4MzI0NTczNiwgImlkIjogMTQsICJlbWFpbCI6ICJpbG92M2dhbTNAZ21haWwuY29tIiwgIm5hbWUiOiAiVHLhuqduIFF1YW5nIE1pbmgiLCJhdmF0YXIiOiAiaHR0cHM6Ly9mYXVjdGlvbjEuYmxvYi5jb3JlLndpbmRvd3MubmV0L2RhdGEvYXZ0LTQuanBnIiwicm9sZSI6ICJST0xFX1VTRVIifQ.b2032db8809325dc4bbe1eb970ba07063b222a0815a74d6f406fa2ab9a77be9fb92c91c33f02c63a2d9f10a8c572eb4b20ac994974bf0cb806c548c7481a3343
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
     const socket = new SockJS('/websocket');
     const stompClient = Stomp.over(socket);
     stompClient.debug = false
-    stompClient.connect({Authorization: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiUk9MRV9DVVNUT01FUiIsInBob25lIjoiMDIyMzQ1Njc4OSIsImRvYiI6IjIwMjQtMTEtMTgiLCJuYW1lIjoiY3VzdG9tZXIiLCJhdmF0YXIiOiJodHRwczovL2kuaWJiLmNvLzJjNGtIM2IvZGVmYXVsdC1hdmF0YXIucG5nIiwiZW1haWwiOiJjdXN0b21lckBnbWFpbC5jb20iLCJzdWIiOiIyIiwiaWF0IjoxNzMxOTI1ODY4LCJleHAiOjE3MzMyMjE4Njh9.cZrFRVhwCUgVCLOetsACD3R_StBkls7nkxnkyg5CkDirxHWRFncXvBcM9ReofJvCXTkMXV_ZtcL0wkwMBUAgsw'}, (frame) => {
+    stompClient.connect({Authorization: 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiUk9MRV9DVVNUT01FUiIsInBob25lIjoiMDIyMzQ1Njc4OSIsImRvYiI6IjIwMjQtMTEtMjAiLCJuYW1lIjoiY3VzdG9tZXIxIiwiYXZhdGFyIjoiaHR0cHM6Ly9pLmliYi5jby8yYzRrSDNiL2RlZmF1bHQtYXZhdGFyLnBuZyIsImVtYWlsIjoiY3VzdG9tZXIxQGdtYWlsLmNvbSIsInN1YiI6IjIiLCJpYXQiOjE3MzIwOTI4OTUsImV4cCI6MTczMzM4ODg5NX0.TX8FYhL9xp0AB9TIBX5HfR5Z_IkL_dgS-1ZEim8_3iFtbAbAZJcyUJCyfaiM5APGLBJxAGCNrF-Pk5wGXFn1ow'}, (frame) => {
         stompClient.subscribe('/user/topic', (notification) => {
             console.log(notification);
         });

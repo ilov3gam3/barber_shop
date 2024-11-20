@@ -3,17 +3,21 @@ package org.example.barber_shop.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
+import org.example.barber_shop.Constants.NotificationType;
 import org.example.barber_shop.Constants.TransactionStatus;
 import org.example.barber_shop.DTO.Payment.PaymentRequest;
 import org.example.barber_shop.Entity.Booking;
 import org.example.barber_shop.Entity.BookingDetail;
+import org.example.barber_shop.Entity.Notification;
 import org.example.barber_shop.Entity.Payment;
 import org.example.barber_shop.Repository.BookingDetailRepository;
 import org.example.barber_shop.Repository.BookingRepository;
+import org.example.barber_shop.Repository.NotificationRepository;
 import org.example.barber_shop.Repository.PaymentRepository;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Util.VNPayUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -32,6 +36,8 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final BookingDetailRepository bookingDetailRepository;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final NotificationRepository notificationRepository;
     @Value("${vnp_TmnCode}")
     private String VNP_TMN_CODE;
     @Value("${vnp_ReturnUrl}")
@@ -211,6 +217,17 @@ public class PaymentService {
                             booking.setPayment(payment);
                         }
                         bookingRepository.saveAll(bookings);
+                        Notification notification = new Notification();
+                        notification.setUser(payment.getBookings().get(0).getCustomer());
+                        notification.setType(NotificationType.PAYMENT_SUCCESS);
+                        notification.setTitle("Payment Success");
+                        notification.setMessage("Payment Success");
+                        notification.setTargetUrl(""); // Optionally, link to payment page
+                        notification.setSeen(false);
+                        notification = notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
+                        System.out.println("message sent to " + payment.getBookings().get(0).getCustomer());
                         return "Payment success";
                     } else {
                         throw new RuntimeException("The money u paid and the money in bookings not matched, please contact admin.");

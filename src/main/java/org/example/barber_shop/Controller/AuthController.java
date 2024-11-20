@@ -6,6 +6,7 @@ import org.example.barber_shop.DTO.User.ForgotPasswordRequest;
 import org.example.barber_shop.DTO.User.LoginRequest;
 import org.example.barber_shop.DTO.User.RegisterRequest;
 import org.example.barber_shop.DTO.User.ResetPasswordRequest;
+import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Service.TemporaryCodeService;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
@@ -95,6 +96,8 @@ public class AuthController {
 
     @GetMapping("/send-ws-auth")
     public void send(@RequestParam String username, @RequestParam String message){
-        simpMessagingTemplate.convertAndSendToUser(username, "/topic", message);
+        Shift shift = new Shift();
+        shift.setName(message);
+        simpMessagingTemplate.convertAndSendToUser(username, "/topic", shift);
     }
 }

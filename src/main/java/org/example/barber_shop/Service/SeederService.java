@@ -70,19 +70,28 @@ public class SeederService implements CommandLineRunner {
         user1.setBlocked(false);
         user1.setAvatar(file);
         user1.setRole(Role.ROLE_ADMIN);
-        userRepository.save(user1);
 
-        User user2 = new User();
-        user2.setName("customer");
-        user2.setDob(new Date(System.currentTimeMillis()));
-        user2.setPhone("0223456789");
-        user2.setEmail("customer@gmail.com");
-        user2.setPassword(passwordEncoder.encode("123456"));
-        user2.setVerified(true);
-        user2.setBlocked(false);
-        user2.setAvatar(file);
-        user2.setRole(Role.ROLE_CUSTOMER);
-        userRepository.save(user2);
+        User user2_1 = new User();
+        user2_1.setName("customer1");
+        user2_1.setDob(new Date(System.currentTimeMillis()));
+        user2_1.setPhone("0223456789");
+        user2_1.setEmail("customer1@gmail.com");
+        user2_1.setPassword(passwordEncoder.encode("123456"));
+        user2_1.setVerified(true);
+        user2_1.setBlocked(false);
+        user2_1.setAvatar(file);
+        user2_1.setRole(Role.ROLE_CUSTOMER);
+
+        User user2_2 = new User();
+        user2_2.setName("customer2");
+        user2_2.setDob(new Date(System.currentTimeMillis()));
+        user2_2.setPhone("0923456789");
+        user2_2.setEmail("customer2@gmail.com");
+        user2_2.setPassword(passwordEncoder.encode("123456"));
+        user2_2.setVerified(true);
+        user2_2.setBlocked(false);
+        user2_2.setAvatar(file);
+        user2_2.setRole(Role.ROLE_CUSTOMER);
 
         User user3 = new User();
         user3.setName("staff1");
@@ -94,7 +103,6 @@ public class SeederService implements CommandLineRunner {
         user3.setBlocked(false);
         user3.setAvatar(file);
         user3.setRole(Role.ROLE_STAFF);
-        userRepository.save(user3);
 
         User user3_1 = new User();
         user3_1.setName("staff2");
@@ -106,7 +114,6 @@ public class SeederService implements CommandLineRunner {
         user3_1.setBlocked(false);
         user3_1.setAvatar(file);
         user3_1.setRole(Role.ROLE_STAFF);
-        userRepository.save(user3_1);
 
         User user3_2 = new User();
         user3_2.setName("staff3");
@@ -118,7 +125,6 @@ public class SeederService implements CommandLineRunner {
         user3_2.setBlocked(false);
         user3_2.setAvatar(file);
         user3_2.setRole(Role.ROLE_STAFF);
-        userRepository.save(user3_2);
 
         User user3_3 = new User();
         user3_3.setName("staff4");
@@ -130,19 +136,8 @@ public class SeederService implements CommandLineRunner {
         user3_3.setBlocked(false);
         user3_3.setAvatar(file);
         user3_3.setRole(Role.ROLE_STAFF);
-        userRepository.save(user3_3);
 
-        User user4 = new User();
-        user4.setName("receptionist");
-        user4.setDob(new Date(System.currentTimeMillis()));
-        user4.setPhone("0777777789");
-        user4.setEmail("receptionist@gmail.com");
-        user4.setPassword(passwordEncoder.encode("123456"));
-        user4.setVerified(true);
-        user4.setBlocked(false);
-        user4.setAvatar(file);
-        user4.setRole(Role.ROLE_RECEPTIONIST);
-        userRepository.save(user4);
+        userRepository.saveAll(List.of(user1, user2_1, user2_2, user3_1, user3_2, user3_3));
     }
     public void seedDefaultTypesServicesCombos(){
         User admin = userRepository.findByEmail("admin@gmail.com");
