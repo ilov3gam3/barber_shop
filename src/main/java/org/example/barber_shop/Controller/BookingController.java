@@ -70,12 +70,6 @@ public class BookingController {
     }
     @PutMapping("/update-booking")
     public ApiResponse<?> updateBooking(@RequestBody BookingUpdateRequest bookingUpdateRequest) {
-        System.out.println(bookingUpdateRequest.bookingId);
-        System.out.println(bookingUpdateRequest.staff_id);
-        System.out.println(bookingUpdateRequest.note);
-        System.out.println(bookingUpdateRequest.startTime);
-        System.out.println(bookingUpdateRequest.serviceIds);
-        System.out.println(bookingUpdateRequest.comboIds);
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "BOOKING UPDATED", bookingService.updateBooking(bookingUpdateRequest)
         );

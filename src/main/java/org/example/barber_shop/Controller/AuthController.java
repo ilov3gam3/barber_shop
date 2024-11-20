@@ -6,12 +6,10 @@ import org.example.barber_shop.DTO.User.ForgotPasswordRequest;
 import org.example.barber_shop.DTO.User.LoginRequest;
 import org.example.barber_shop.DTO.User.RegisterRequest;
 import org.example.barber_shop.DTO.User.ResetPasswordRequest;
-import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Service.TemporaryCodeService;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -71,20 +69,6 @@ public class AuthController {
                 HttpStatus.OK.value(), "PASSWORD RESET", null
         );
     }
-    @GetMapping("/get-google-login-url")
-    public ApiResponse<?> getGoogleLoginUrl(){
-        OAuth2AuthorizationRequest authorizationRequest = OAuth2AuthorizationRequest
-                .authorizationCode()
-                .clientId("950893291709-9rqulakhl78cnlejkuofncru62p49epo.apps.googleusercontent.com")
-                .redirectUri("http://localhost:8080/login/oauth2/code/google")
-                .scope("openid", "profile", "email")
-                .build();
-
-        String loginUrl = authorizationRequest.getAuthorizationUri();
-        return new ApiResponse<>(
-            HttpStatus.OK.value(), "GOOGLE_LOGIN", loginUrl
-        );
-    }
     @PostMapping("/token-exchange")
     public ApiResponse<?> tokenExchange(@RequestBody Map<String, String> request){
         return new ApiResponse<>(
@@ -92,12 +76,5 @@ public class AuthController {
                 "LOGIN_SUCCESS",
                 temporaryCodeService.handleExchangeRequest(request)
         );
-    }
-
-    @GetMapping("/send-ws-auth")
-    public void send(@RequestParam String username, @RequestParam String message){
-        Shift shift = new Shift();
-        shift.setName(message);
-        simpMessagingTemplate.convertAndSendToUser(username, "/topic", shift);
     }
 }

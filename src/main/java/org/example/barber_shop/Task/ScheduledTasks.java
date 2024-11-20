@@ -26,16 +26,12 @@ public class ScheduledTasks {
     private final SimpMessagingTemplate simpMessagingTemplate;
     @Scheduled(fixedRate = 60 * 1000) // every 1 min
     public void scheduledTaskMinutes() {
-        System.out.println("min task run at " + LocalDateTime.now().getMinute());
         try {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).plusMinutes(30); // Strip seconds
             Timestamp startTime = Timestamp.valueOf(now); // Start of the current minute
             Timestamp endTime = Timestamp.valueOf(now.plusMinutes(1).minusSeconds(1)); // End of the current minute
-            System.out.println(startTime);
-            System.out.println(endTime);
             List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(
                     BookingStatus.PAID, startTime, endTime);
-            System.out.println(bookings.size());
             if (bookings.isEmpty()) return;
 
             List<Notification> notifications = new ArrayList<>();
@@ -56,7 +52,6 @@ public class ScheduledTasks {
                 Notification notification = notifications.get(i);
                 notification.setUser(null);
                 simpMessagingTemplate.convertAndSendToUser(user.getEmail(), "/topic", notification);
-                System.out.println("message send to " + user.getEmail());
             }
         } catch (Exception e) {
             System.err.println("Error during scheduled task execution: " + e.getMessage());
@@ -64,7 +59,6 @@ public class ScheduledTasks {
     }
     @Scheduled(cron = "0 0 * * * *") // Run every hour
     public void notifyUnpaidBookings() {
-        System.out.println("hour task run");
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime targetTime = now.plusHours(24).truncatedTo(ChronoUnit.MINUTES); // 24 hours ahead
@@ -72,7 +66,6 @@ public class ScheduledTasks {
             Timestamp endTime = Timestamp.valueOf(targetTime.plusMinutes(59).withSecond(59)); // One-hour range
             List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(
                     BookingStatus.CONFIRMED, startTime, endTime);
-            System.out.println(bookings.size());
             if (bookings.isEmpty()) return;
 
             List<Notification> notifications = new ArrayList<>();
@@ -92,7 +85,6 @@ public class ScheduledTasks {
                 User user = notification.getUser();
                 notification.setUser(null);
                 simpMessagingTemplate.convertAndSendToUser(user.getEmail(), "/topic", notification);
-                System.out.println("message send to " + user.getEmail());
             }
         } catch (Exception e) {
             System.err.println("Error during unpaid booking notification: " + e.getMessage());

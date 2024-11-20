@@ -227,7 +227,6 @@ public class PaymentService {
                         notification = notificationRepository.save(notification);
                         notification.setUser(null);
                         simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
-                        System.out.println("message sent to " + payment.getBookings().get(0).getCustomer());
                         return "Payment success";
                     } else {
                         throw new RuntimeException("The money u paid and the money in bookings not matched, please contact admin.");

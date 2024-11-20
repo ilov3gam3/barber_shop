@@ -98,7 +98,6 @@ public class BookingService {
             if (isTimeValid(staff_checked, bookingRequest.startTime, endTime)) {
                 if (isTimeInAssignedShift(staff_checked, bookingRequest.startTime, endTime)) {
                     User customer = SecurityUtils.getCurrentUser();
-                    System.out.println(customer.getId());
                     Booking booking = new Booking();
                     booking.setStatus(BookingStatus.PENDING);
                     booking.setCustomer(customer);
@@ -152,7 +151,6 @@ public class BookingService {
                 notification = notificationRepository.save(notification);
                 notification.setUser(null);
                 simpMessagingTemplate.convertAndSendToUser(booking.getCustomer().getEmail(), "/topic", notification);
-                System.out.println("message sent to " + booking.getCustomer().getEmail());
                 return bookingMapper.toResponse(booking);
             } else {
                 throw new RuntimeException("You already has a confirmed booking in this time.");
