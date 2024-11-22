@@ -44,10 +44,9 @@ public class SecurityConfig {
     @Value("${front_end_server}")
     private String front_end_server;
     private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**"};
-    private final String[] adminApi = {"/api/users/", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift"};
-    private final String[] customerApi = {"/api/booking/book", "/api/payment/get-vnpay-url", "/api/booking/update-booking"};
+    private final String[] adminApi = {"/api/users", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift"};
+    private final String[] customerApi = {"/api/booking/book", "/api/payment/get-vnpay-url", "/api/booking/update-booking", "/api/booking/cancel/**"};
     private final String[] staffApi = {"/api/booking/confirm-booking"};
-    private final String[] staffCustomerApi = {"/api/booking/cancel/**"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.cors(cors -> cors.configurationSource(request -> {
@@ -60,7 +59,6 @@ public class SecurityConfig {
         }));
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(request -> request
                 .requestMatchers(publicApi).permitAll()
-                .requestMatchers(staffCustomerApi).hasAnyRole("CUSTOMER", "STAFF")
                 .requestMatchers(adminApi).hasRole("ADMIN")
                 .requestMatchers(customerApi).hasRole("CUSTOMER")
                 .requestMatchers(staffApi).hasRole("STAFF")
@@ -108,7 +106,7 @@ public class SecurityConfig {
             user = userRepository.save(user);
         }
         String code = temporaryCodeService.generateCode(String.valueOf(user.getId()));
-        response.sendRedirect(front_end_server + "/?code=" + code);
+        response.sendRedirect(front_end_server + "/?token_exchange=" + code);
     }
     @Bean
     public PasswordEncoder passwordEncoder(){

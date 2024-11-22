@@ -3,6 +3,7 @@ package org.example.barber_shop.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Config.SecurityUser;
+import org.example.barber_shop.Exception.UserNotFoundException;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.File.FileResponse;
@@ -33,6 +34,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -206,5 +208,35 @@ public class UserService {
         } else {
             throw new RuntimeException("Invalid token.");
         }
+    }
+    public UserResponse updateUser(UpdateUserRequest updateUserRequest){
+        Optional<User> userOptional = userRepository.findById(SecurityUtils.getCurrentUserId());
+        if (userOptional.isPresent()){
+            User user = userOptional.get();
+            user.setName(updateUserRequest.name);
+            user.setPhone(updateUserRequest.phone);
+            user.setDob(updateUserRequest.dob);
+            user.setEmail(updateUserRequest.email);
+            if (updateUserRequest.password != null){
+                if (!updateUserRequest.password.isEmpty()){
+                    user.setPassword(passwordEncoder.encode(updateUserRequest.password));
+                }
+            }
+            return userMapper.toResponse(userRepository.save(user));
+        } else {
+            throw new UserNotFoundException("User not found with id " + updateUserRequest.id);
+        }
+    }
+    public UserResponse adminCreateUser(AdminCreateUser adminCreateUser){
+        User user = new User();
+        user.setName(adminCreateUser.name);
+        user.setEmail(adminCreateUser.email);
+        user.setPhone(adminCreateUser.phone);
+        user.setDob(adminCreateUser.dob);
+        user.setPassword(passwordEncoder.encode(adminCreateUser.password));
+        user.setRole(adminCreateUser.role);
+        user.setBlocked(false);
+        user.setVerified(true);
+        return userMapper.toResponse(userRepository.save(user));
     }
 }

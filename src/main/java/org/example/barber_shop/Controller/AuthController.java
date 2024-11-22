@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -76,5 +77,9 @@ public class AuthController {
                 "LOGIN_SUCCESS",
                 temporaryCodeService.handleExchangeRequest(request)
         );
+    }
+    @GetMapping("/test")
+    public String test() {
+        return LocalDateTime.now().toString();
     }
 }

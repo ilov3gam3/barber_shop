@@ -36,24 +36,34 @@ public class ShiftService {
     private final BookingRepository bookingRepository;
 
     public StaffShiftResponse addStaffShift(StaffShiftRequest shiftRequest) {
-        Optional<Shift> shift = shiftRepository.findById(shiftRequest.shiftId);
-        if (shift.isPresent()) {
-            Shift checkedShift = shift.get();
-            User user = userRepository.findByIdAndRole(shiftRequest.staffId, Role.ROLE_STAFF);
-            if (user != null){
-                StaffShift staffShift = new StaffShift();
-                staffShift.setStaff(user);
-                staffShift.setShift(checkedShift);
-                staffShift.setStartTime(checkedShift.getStartTime());
-                staffShift.setEndTime(checkedShift.getEndTime());
-                staffShift.setDate(shiftRequest.date);
-                staffShift = staffShiftRepository.save(staffShift);
-                return staffShiftMapper.toStaffShiftResponse(staffShift);
+        if (shiftRequest.date.isAfter(LocalDate.now())) {
+            Optional<Shift> shift = shiftRepository.findById(shiftRequest.shiftId);
+            if (shift.isPresent()) {
+                Shift checkedShift = shift.get();
+                User user = userRepository.findByIdAndRole(shiftRequest.staffId, Role.ROLE_STAFF);
+                if (user != null){
+                    List<StaffShift> staffShiftCheck = staffShiftRepository.findByStaffIdAndDate(user.getId(), shiftRequest.date);
+                    for (int i = 0; i < staffShiftCheck.size(); i++) {
+                        if (staffShiftCheck.get(i).getStartTime() == checkedShift.getStartTime() && staffShiftCheck.get(i).getEndTime() == checkedShift.getEndTime()) {
+                            throw new RuntimeException("Staff already have this shift");
+                        }
+                    }
+                    StaffShift staffShift = new StaffShift();
+                    staffShift.setStaff(user);
+                    staffShift.setShift(checkedShift);
+                    staffShift.setStartTime(checkedShift.getStartTime());
+                    staffShift.setEndTime(checkedShift.getEndTime());
+                    staffShift.setDate(shiftRequest.date);
+                    staffShift = staffShiftRepository.save(staffShift);
+                    return staffShiftMapper.toStaffShiftResponse(staffShift);
+                } else {
+                    throw new RuntimeException("Invalid staff id.");
+                }
             } else {
-                throw new RuntimeException("Invalid staff id.");
+                throw new RuntimeException("Invalid shift id.");
             }
         } else {
-            throw new RuntimeException("Invalid shift id.");
+            throw new RuntimeException("Date must be in future.");
         }
     }
     public List<Shift> getAllShift(){

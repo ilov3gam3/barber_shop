@@ -42,12 +42,12 @@ public class BookingController {
         }
     }
 
-    @GetMapping("/confirm-booking")
+    /*@GetMapping("/confirm-booking")
     public ApiResponse<?> confirmBooking(@RequestParam long booking_id){
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "CONFIRM BOOKING", bookingService.confirmBooking(booking_id)
         );
-    }
+    }*/
 
     @GetMapping("/get-staff-work-schedule-in-week")
     public ApiResponse<?> getStaffWorkScheduleWeek(@RequestParam(required = false) Integer week, @RequestParam(required = false) Integer year, @RequestParam long staff_id) {
@@ -73,5 +73,17 @@ public class BookingController {
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "BOOKING UPDATED", bookingService.updateBooking(bookingUpdateRequest)
         );
+    }
+    @PutMapping("/complete-booking/{id}")
+    public ApiResponse<?> completeBooking(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING COMPLETED", bookingService.updateBooking(id)
+        );
+    }
+    @PutMapping("/no-show-booking/{id}")
+    public ApiResponse<?> noShowBooking(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING COMPLETED",bookingService.noShowBooking(id)
+                );
     }
 }

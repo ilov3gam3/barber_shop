@@ -1,13 +1,16 @@
 package org.example.barber_shop.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
 import org.example.barber_shop.DTO.Payment.PaymentRequest;
 import org.example.barber_shop.Service.PaymentService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 @RestController
@@ -15,7 +18,8 @@ import java.io.UnsupportedEncodingException;
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
-
+    @Value("${front_end_server}")
+    private String fe_server;
     @GetMapping("/get-vnpay-url")
     public ApiResponse<?> getVNPayUrl(@ModelAttribute PaymentRequest paymentRequest, HttpServletRequest request) throws UnsupportedEncodingException {
         return new ApiResponse<>(
@@ -23,9 +27,7 @@ public class PaymentController {
         );
     }
     @GetMapping("/vnpay-result")
-    public ApiResponse<?> getVNPayResult(HttpServletRequest request) throws UnsupportedEncodingException {
-        return new ApiResponse<>(
-                HttpStatus.OK.value(), "PAYMENT", paymentService.handleVnpayResult(request)
-        );
+    public void getVNPayResult(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.sendRedirect(fe_server + "?payment_status=" + paymentService.handleVnpayResult(request));
     }
 }

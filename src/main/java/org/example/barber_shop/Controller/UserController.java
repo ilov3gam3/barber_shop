@@ -2,7 +2,9 @@ package org.example.barber_shop.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
+import org.example.barber_shop.DTO.User.AdminCreateUser;
 import org.example.barber_shop.DTO.User.UpdateProfileRequest;
+import org.example.barber_shop.DTO.User.UpdateUserRequest;
 import org.example.barber_shop.Service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +18,7 @@ import java.io.IOException;
 public class UserController {
     public final UserService userService;
 
-    @GetMapping("/")
+    @GetMapping("")
     public ApiResponse<?> getAllUsers() {
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
@@ -79,5 +81,17 @@ public class UserController {
                     HttpStatus.INTERNAL_SERVER_ERROR.value(), "FAIL", "This token is still valid."
             );
         }
+    }
+    @PutMapping("")
+    public ApiResponse<?> updateUser(@RequestBody UpdateUserRequest updateUserRequest){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "USER UPDATED", userService.updateUser(updateUserRequest)
+        );
+    }
+    @PostMapping("")
+    public ApiResponse<?> adminCreateUser(@RequestBody AdminCreateUser adminCreateUser){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "USER UPDATED", userService.adminCreateUser(adminCreateUser)
+        );
     }
 }

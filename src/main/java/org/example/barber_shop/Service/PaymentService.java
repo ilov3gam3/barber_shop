@@ -55,7 +55,7 @@ public class PaymentService {
                 }
             }
             Long customer_id = SecurityUtils.getCurrentUserId();
-            List<Booking> bookings = bookingRepository.findAllByIdInAndCustomer_IdAndStatus(paymentRequest.bookingIds, customer_id, BookingStatus.CONFIRMED);
+            List<Booking> bookings = bookingRepository.findAllByIdInAndCustomer_IdAndStatus(paymentRequest.bookingIds, customer_id, BookingStatus.PENDING);
             if (bookings.size() == paymentRequest.bookingIds.size()){
                 String vnp_Version = "2.1.0";
                 String vnp_Command = "pay";
@@ -125,7 +125,7 @@ public class PaymentService {
                 paymentRepository.save(payment);
                 return VNP_PAY_URL + "?" + queryUrl;
             } else {
-                throw new RuntimeException("This booking is paid, or not in CONFIRMED status.");
+                throw new RuntimeException("This booking is paid, or not in PENDING status.");
             }
         } else {
             throw new RuntimeException("Booking ids are null.");
@@ -227,18 +227,18 @@ public class PaymentService {
                         notification = notificationRepository.save(notification);
                         notification.setUser(null);
                         simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
-                        return "Payment success";
+                        return "success";
                     } else {
-                        throw new RuntimeException("The money u paid and the money in bookings not matched, please contact admin.");
+                        return "fail";
                     }
                 } else {
-                    throw new RuntimeException("this payment is processed, please dont spam this link");
+                    return "fail";
                 }
             } else {
-                throw new RuntimeException("Payment not found");
+                return "fail";
             }
         } else {
-            throw new RuntimeException("Hash not match");
+            return "fail";
         }
     }
 }

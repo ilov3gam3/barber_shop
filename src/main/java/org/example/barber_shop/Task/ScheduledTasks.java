@@ -65,7 +65,7 @@ public class ScheduledTasks {
             Timestamp startTime = Timestamp.valueOf(targetTime);
             Timestamp endTime = Timestamp.valueOf(targetTime.plusMinutes(59).withSecond(59)); // One-hour range
             List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(
-                    BookingStatus.CONFIRMED, startTime, endTime);
+                    BookingStatus.PENDING, startTime, endTime);
             if (bookings.isEmpty()) return;
 
             List<Notification> notifications = new ArrayList<>();
