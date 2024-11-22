@@ -265,7 +265,7 @@ public class BookingService {
                 checkedBooking.setStatus(BookingStatus.CANCELLED);
                 bookingRepository.save(checkedBooking);
             } else {
-                throw new RuntimeException("Booking can only be canceled if in PENDING status");
+                throw new RuntimeException("Booking can only be canceled if in PENDING or CONFIRMED status.");
             }
         } else {
             throw new RuntimeException("Booking not found.");

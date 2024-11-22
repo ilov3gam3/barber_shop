@@ -28,4 +28,5 @@ public class Combo extends DistributedEntity{
 
     @ManyToMany
     private List<File> images;
+    private boolean deleted;
 }

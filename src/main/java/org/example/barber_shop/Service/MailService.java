@@ -39,4 +39,42 @@ public class MailService {
             e.printStackTrace();
         }
     }
+
+    @Async
+    public void sendMailIncomingBooking(String to, String url) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            mimeMessageHelper.setTo(to);
+            mimeMessageHelper.setSubject("Incoming booking");
+            mimeMessageHelper.setFrom(new InternetAddress(from, applicationName));
+            Context context = new Context();
+            context.setVariable("url", url);
+            context.setVariable("web_name", applicationName);
+            String stringProcess = templateEngine.process("incoming_booking", context);
+            mimeMessageHelper.setText(stringProcess, true);
+            mailSender.send(mimeMessage);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Async
+    public void sendMailUnPaidBooking(String to, String url) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            mimeMessageHelper.setTo(to);
+            mimeMessageHelper.setSubject("Unpaid booking");
+            mimeMessageHelper.setFrom(new InternetAddress(from, applicationName));
+            Context context = new Context();
+            context.setVariable("url", url);
+            context.setVariable("web_name", applicationName);
+            String stringProcess = templateEngine.process("unpaid_booking", context);
+            mimeMessageHelper.setText(stringProcess, true);
+            mailSender.send(mimeMessage);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }

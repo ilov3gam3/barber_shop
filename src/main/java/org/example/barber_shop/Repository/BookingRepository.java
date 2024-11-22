@@ -7,6 +7,7 @@ import org.example.barber_shop.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
@@ -19,4 +20,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStaff_Id(Long staffId);
     List<Booking> findByStatusAndStartTimeBetween(BookingStatus bookingStatus, Timestamp startTime, Timestamp endTime);
     Booking findByIdAndCustomerAndStatus(Long id, User customer, BookingStatus status);
+    List<Booking> findByStaffAndStatusNotAndStartTimeInOrEndTimeInOrStartTimeLessThanAndEndTimeGreaterThan(User staff, BookingStatus bookingStatus, Collection<Timestamp> startTime, Collection<Timestamp> endTime, Timestamp startTime2, Timestamp endTime2);
 }

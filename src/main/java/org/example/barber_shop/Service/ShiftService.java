@@ -1,19 +1,26 @@
 package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.Shift.*;
+import org.example.barber_shop.Entity.Booking;
 import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Entity.StaffShift;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Mapper.StaffShiftMapper;
+import org.example.barber_shop.Repository.BookingRepository;
 import org.example.barber_shop.Repository.ShiftRepository;
 import org.example.barber_shop.Repository.StaffShiftRepository;
 import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +33,7 @@ public class ShiftService {
     private final StaffShiftRepository staffShiftRepository;
     private final UserRepository userRepository;
     private final StaffShiftMapper staffShiftMapper;
+    private final BookingRepository bookingRepository;
 
     public StaffShiftResponse addStaffShift(StaffShiftRequest shiftRequest) {
         Optional<Shift> shift = shiftRepository.findById(shiftRequest.shiftId);
@@ -107,6 +115,32 @@ public class ShiftService {
         if (shift.isPresent()) {
             shiftRepository.delete(shift.get());
             return true;
+        } else {
+            return false;
+        }
+    }
+    public static Timestamp convertToTimestamp(LocalDate date, LocalTime time) {
+        if (date == null || time == null) {
+            throw new IllegalArgumentException("Date and time must not be null");
+        }
+        LocalDateTime dateTime = LocalDateTime.of(date, time);
+        return Timestamp.valueOf(dateTime);
+    }
+    public boolean delete(long id){
+        Optional<StaffShift> staffShiftOptional = staffShiftRepository.findById(id);
+        if (staffShiftOptional.isPresent()) {
+            StaffShift staffShift = staffShiftOptional.get();
+            User staff = staffShift.getStaff();
+            Timestamp startTime = convertToTimestamp(staffShift.getDate(), staffShift.getStartTime());
+            Timestamp endTime = convertToTimestamp(staffShift.getDate(), staffShift.getEndTime());
+            List<Timestamp> timestamps = List.of(startTime, endTime);
+            List<Booking> bookings = bookingRepository.findByStaffAndStatusNotAndStartTimeInOrEndTimeInOrStartTimeLessThanAndEndTimeGreaterThan(staff, BookingStatus.PENDING, timestamps, timestamps, startTime, endTime);
+            if (bookings.isEmpty()) {
+                staffShiftRepository.delete(staffShift);
+                return true;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }

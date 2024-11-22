@@ -21,4 +21,6 @@ public class ServiceType extends DistributedEntity{
 
     @OneToMany(mappedBy = "serviceType")
     private List<Service> services;
+
+    private boolean deleted;
 }

@@ -30,4 +30,16 @@ public class StaffShiftController {
                 HttpStatus.OK.value(), "SHIFTS OF STAFF IN WEEK", shiftService.staffGetShifts(week, year, staff_id)
         );
     }
+    @DeleteMapping("/{id}")
+    public ApiResponse<?> delete(@PathVariable long id) {
+        if (shiftService.delete(id)){
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "DELETED", null
+            );
+        } else {
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(), "DELETE FAIL", null
+            );
+        }
+    }
 }

@@ -74,12 +74,12 @@
 <div class="email-container">
     <div class="header">
         <h1 th:text="'Welcome to ' + ${web_name}"></h1>
-        <p>Here is your token:</p>
     </div>
 
-    <div class="content">
-        <p>You have an incoming booking 30 minute, click here to view detail</p>
-    </div>
+    <p>
+        You have an incoming booking in 30 minutes,
+        <a th:href="${url}" target="_blank">click here to view detail</a>.
+    </p>
 </div>
 
 </body>

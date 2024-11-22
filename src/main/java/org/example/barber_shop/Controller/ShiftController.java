@@ -38,7 +38,7 @@ public class ShiftController {
             );
         }
     }
-    @PutMapping("/")
+    @PutMapping("")
     public ApiResponse<?> updateShift(@RequestBody ShiftRequest shiftRequest){
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "SHIFT UPDATED", shiftService.updateShift(shiftRequest)

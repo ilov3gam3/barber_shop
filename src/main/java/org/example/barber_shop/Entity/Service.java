@@ -32,4 +32,6 @@ public class Service extends DistributedEntity{
 
     @OneToMany
     private List<File> images;
+
+    private boolean deleted;
 }

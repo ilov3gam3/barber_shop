@@ -255,26 +255,32 @@ public class SeederService implements CommandLineRunner {
 
         ServiceType serviceType1 = new ServiceType();
         serviceType1.setName("Haircut");
+        serviceType1.setDeleted(false);
         serviceType1 = serviceTypeRepository.save(serviceType1);
 
         ServiceType serviceType2 = new ServiceType();
         serviceType2.setName("Shave");
+        serviceType2.setDeleted(false);
         serviceType2 = serviceTypeRepository.save(serviceType2);
 
         ServiceType serviceType3 = new ServiceType();
         serviceType3.setName("Beard Styling");
+        serviceType3.setDeleted(false);
         serviceType3 = serviceTypeRepository.save(serviceType3);
 
         ServiceType serviceType4 = new ServiceType();
         serviceType4.setName("Hair Coloring");
+        serviceType4.setDeleted(false);
         serviceType4 = serviceTypeRepository.save(serviceType4);
 
         ServiceType serviceType5 = new ServiceType();
         serviceType5.setName("Facial");
+        serviceType5.setDeleted(false);
         serviceType5 = serviceTypeRepository.save(serviceType5);
 
         ServiceType serviceType6 = new ServiceType();
         serviceType6.setName("Massage");
+        serviceType6.setDeleted(false);
         serviceType6 = serviceTypeRepository.save(serviceType6);
         // done seed types
 
@@ -284,6 +290,7 @@ public class SeederService implements CommandLineRunner {
         service1.setPrice(70000);
         service1.setEstimateTime(30);
         service1.setServiceType(serviceType1);
+        service1.setDeleted(false);
         service1.setImages(List.of(file2));
         service1 = serviceRepository.save(service1);
 
@@ -293,6 +300,7 @@ public class SeederService implements CommandLineRunner {
         service2.setPrice(100000);
         service2.setEstimateTime(45);
         service2.setServiceType(serviceType1);
+        service2.setDeleted(false);
         service2.setImages(List.of(file3));
         service2 = serviceRepository.save(service2);
 
@@ -302,6 +310,7 @@ public class SeederService implements CommandLineRunner {
         service3.setPrice(50000);
         service3.setEstimateTime(15);
         service3.setServiceType(serviceType3);
+        service3.setDeleted(false);
         service3.setImages(List.of(file4));
         service3 = serviceRepository.save(service3);
 
@@ -311,6 +320,7 @@ public class SeederService implements CommandLineRunner {
         service4.setPrice(70000);
         service4.setEstimateTime(30);
         service4.setServiceType(serviceType3);
+        service4.setDeleted(false);
         service4.setImages(List.of(file5));
         service4 = serviceRepository.save(service4);
 
@@ -320,6 +330,7 @@ public class SeederService implements CommandLineRunner {
         service5.setPrice(60000);
         service5.setEstimateTime(20);
         service5.setServiceType(serviceType2);
+        service5.setDeleted(false);
         service5.setImages(List.of(file6));
         service5 = serviceRepository.save(service5);
 
@@ -329,6 +340,7 @@ public class SeederService implements CommandLineRunner {
         service6.setPrice(80000);
         service6.setEstimateTime(30);
         service6.setServiceType(serviceType2);
+        service6.setDeleted(false);
         service6.setImages(List.of(file7));
         service6 = serviceRepository.save(service6);
 
@@ -338,6 +350,7 @@ public class SeederService implements CommandLineRunner {
         service7.setPrice(80000);
         service7.setEstimateTime(20);
         service7.setServiceType(serviceType5);
+        service7.setDeleted(false);
         service7.setImages(List.of(file8));
         service7 = serviceRepository.save(service7);
 
@@ -347,6 +360,7 @@ public class SeederService implements CommandLineRunner {
         service8.setPrice(100000);
         service8.setEstimateTime(40);
         service8.setServiceType(serviceType5);
+        service8.setDeleted(false);
         service8.setImages(List.of(file9));
         service8 = serviceRepository.save(service8);
 
@@ -356,6 +370,7 @@ public class SeederService implements CommandLineRunner {
         service9.setPrice(120000);
         service9.setEstimateTime(15);
         service9.setServiceType(serviceType6);
+        service9.setDeleted(false);
         service9.setImages(List.of(file10));
         service9 = serviceRepository.save(service9);
 
@@ -365,6 +380,7 @@ public class SeederService implements CommandLineRunner {
         service10.setPrice(300000);
         service10.setEstimateTime(60);
         service10.setServiceType(serviceType6);
+        service10.setDeleted(false);
         service10.setImages(List.of(file11));
         service10 = serviceRepository.save(service10);
 
@@ -374,6 +390,7 @@ public class SeederService implements CommandLineRunner {
         service11.setPrice(500000);
         service11.setEstimateTime(120);
         service11.setServiceType(serviceType4);
+        service11.setDeleted(false);
         service11.setImages(List.of(file12));
         service11 = serviceRepository.save(service11);
 
@@ -383,6 +400,7 @@ public class SeederService implements CommandLineRunner {
         service12.setPrice(1000000);
         service12.setEstimateTime(180);
         service12.setServiceType(serviceType4);
+        service12.setDeleted(false);
         service12.setImages(List.of(file13));
         service12 = serviceRepository.save(service12);
 
@@ -392,6 +410,7 @@ public class SeederService implements CommandLineRunner {
         combo1.setName("The Executive Combo");
         combo1.setDescription("A complete grooming package for a polished, executive look");
         combo1.setServices(List.of(service2, service6, service8));
+        combo1.setDeleted(false);
         combo1.setPrice(250000);
         combo1.setEstimateTime(105);
         combo1.setImages(List.of(file3, file7, file9));
@@ -401,6 +420,7 @@ public class SeederService implements CommandLineRunner {
         combo2.setName("The Gentleman’s Combo");
         combo2.setDescription("Essential grooming for a fresh, refined look");
         combo2.setServices(List.of(service1, service3, service5));
+        combo2.setDeleted(false);
         combo2.setPrice(180000);
         combo2.setEstimateTime(65);
         combo2.setImages(List.of(file3, file7, file9));
@@ -410,6 +430,7 @@ public class SeederService implements CommandLineRunner {
         combo3.setName("Relax and Revive Combo");
         combo3.setDescription("Rejuvenating facial and head massage for relaxation and stress relief");
         combo3.setServices(List.of(service8, service9));
+        combo3.setDeleted(false);
         combo3.setPrice(200000);
         combo3.setEstimateTime(55);
         combo3.setImages(List.of(file9, file10));
@@ -419,6 +440,7 @@ public class SeederService implements CommandLineRunner {
         combo4.setName("Premium Grooming Combo");
         combo4.setDescription("A top-notch grooming package with all the premium treatments");
         combo4.setServices(List.of(service2, service4, service7));
+        combo4.setDeleted(false);
         combo4.setPrice(220000);
         combo4.setEstimateTime(95);
         combo4.setImages(List.of(file3, file5, file8));

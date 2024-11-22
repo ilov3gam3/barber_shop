@@ -3,13 +3,11 @@ package org.example.barber_shop.Controller;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
 import org.example.barber_shop.DTO.Combo.ComboRequest;
+import org.example.barber_shop.DTO.Combo.ComboUpdateRequest;
 import org.example.barber_shop.Service.ComboService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
@@ -27,9 +25,27 @@ public class ComboController {
     }
 
     @PostMapping(value = "/add-combo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<?> addCombo(ComboRequest comboRequest) throws IOException {
+    public ApiResponse<?> addCombo(@ModelAttribute ComboRequest comboRequest) throws IOException {
         return new ApiResponse<>(
                 HttpStatus.CREATED.value(), "COMBO CREATED", comboService.addCombo(comboRequest)
+        );
+    }
+    @DeleteMapping("/{id}")
+    public ApiResponse<?> delete(@PathVariable long id){
+        if (comboService.delete(id)){
+            return new ApiResponse<>(
+                    HttpStatus.CREATED.value(), "COMBO DELETED", null
+            );
+        } else {
+            return new ApiResponse<>(
+                    HttpStatus.CREATED.value(), "DELETE FAIL", null
+            );
+        }
+    }
+    @PutMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<?> update(@ModelAttribute ComboUpdateRequest comboUpdateRequest) throws IOException {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "COMBO UPDATED", comboService.update(comboUpdateRequest)
         );
     }
 }
