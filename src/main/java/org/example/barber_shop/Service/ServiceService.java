@@ -8,7 +8,6 @@ import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Service.ServiceRequest;
 import org.example.barber_shop.DTO.Service.ServiceResponse;
-import org.example.barber_shop.Exception.ServiceTypeNotFoundException;
 import org.example.barber_shop.Mapper.ServiceMapper;
 
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class ServiceService {
             serviceTypeRepository.save(serviceType);
             return serviceMapper.toResponse(savedService);
         } else {
-            throw new ServiceTypeNotFoundException("Invalid service type id, there is no service type with this id.");
+            throw new RuntimeException("Invalid service type id, there is no service type with this id.");
         }
     }
 

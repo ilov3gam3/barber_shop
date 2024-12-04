@@ -41,6 +41,12 @@ public class BookingController {
             );
         }
     }
+    @GetMapping("/{id}")
+    public ApiResponse<?> getBookingById(@PathVariable("id") int id) {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING ID" + id, bookingService.getBookingWithId(id)
+        );
+    }
 
     /*@GetMapping("/confirm-booking")
     public ApiResponse<?> confirmBooking(@RequestParam long booking_id){
@@ -61,7 +67,7 @@ public class BookingController {
                 HttpStatus.OK.value(), "ADMIN BOOK SUCCESS", bookingService.adminBook(bookingRequest)
         );
     }
-    @GetMapping("/cancel/{id}")
+    @DeleteMapping("/cancel/{id}")
     public ApiResponse<?> cancelBooking(@PathVariable Long id) {
         bookingService.cancelBooking(id);
         return new ApiResponse<>(
@@ -83,7 +89,13 @@ public class BookingController {
     @PutMapping("/no-show-booking/{id}")
     public ApiResponse<?> noShowBooking(@PathVariable long id){
         return new ApiResponse<>(
-                HttpStatus.OK.value(), "BOOKING COMPLETED",bookingService.noShowBooking(id)
-                );
+                HttpStatus.OK.value(), "BOOKING NO_SHOW",bookingService.noShowBooking(id)
+        );
+    }
+    @PutMapping("/reject-booking/{id}")
+    public ApiResponse<?> rejectBooking(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKING REJECTED", bookingService.rejectBooking(id)
+        );
     }
 }

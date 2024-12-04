@@ -34,7 +34,7 @@ public class ShiftController {
             );
         } else {
             return new ApiResponse<>(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(), "SHIFT DELETED FAIL", null
+                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "SHIFT DELETED FAIL", null
             );
         }
     }

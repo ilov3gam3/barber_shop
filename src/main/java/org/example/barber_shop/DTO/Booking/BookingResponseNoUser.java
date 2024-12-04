@@ -3,6 +3,7 @@ package org.example.barber_shop.DTO.Booking;
 
 import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.DTO.BookingDetail.BookingDetailResponse;
+import org.example.barber_shop.DTO.Review.ReviewResponse;
 import org.example.barber_shop.DTO.User.UserResponse;
 
 import java.sql.Timestamp;
@@ -18,4 +19,5 @@ public class BookingResponseNoUser {
     public Timestamp createdAt;
     public Timestamp updatedAt;
     public List<BookingDetailResponse> bookingDetails;
+    public ReviewResponse review;
 }

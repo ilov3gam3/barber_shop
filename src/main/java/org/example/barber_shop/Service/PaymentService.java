@@ -4,16 +4,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.Constants.NotificationType;
+import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.Constants.TransactionStatus;
+import org.example.barber_shop.DTO.Booking.BookingResponseAdmin;
 import org.example.barber_shop.DTO.Payment.PaymentRequest;
-import org.example.barber_shop.Entity.Booking;
-import org.example.barber_shop.Entity.BookingDetail;
-import org.example.barber_shop.Entity.Notification;
-import org.example.barber_shop.Entity.Payment;
-import org.example.barber_shop.Repository.BookingDetailRepository;
-import org.example.barber_shop.Repository.BookingRepository;
-import org.example.barber_shop.Repository.NotificationRepository;
-import org.example.barber_shop.Repository.PaymentRepository;
+import org.example.barber_shop.DTO.Payment.PaymentResponse;
+import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Mapper.BookingMapper;
+import org.example.barber_shop.Mapper.PaymentMapper;
+import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Util.VNPayUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +37,9 @@ public class PaymentService {
     private final BookingDetailRepository bookingDetailRepository;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final NotificationRepository notificationRepository;
+    private final PaymentMapper paymentMapper;
+    private final MailService mailService;
+    private final BookingMapper bookingMapper;
     @Value("${vnp_TmnCode}")
     private String VNP_TMN_CODE;
     @Value("${vnp_ReturnUrl}")
@@ -46,6 +48,9 @@ public class PaymentService {
     private String SECRET_KEY;
     @Value("${vnp_PayUrl}")
     private String VNP_PAY_URL;
+    @Value("${front_end_server}")
+    private String fe_server;
+    private final VoucherRepository voucherRepository;
 
     public String getVnpayUrl(PaymentRequest paymentRequest, HttpServletRequest request) throws UnsupportedEncodingException {
         if (paymentRequest.bookingIds != null){
@@ -56,11 +61,39 @@ public class PaymentService {
             }
             Long customer_id = SecurityUtils.getCurrentUserId();
             List<Booking> bookings = bookingRepository.findAllByIdInAndCustomer_IdAndStatus(paymentRequest.bookingIds, customer_id, BookingStatus.PENDING);
+            if (bookings.isEmpty()){
+                throw new RuntimeException("No booking id is valid.");
+            }
+            List<Booking> bookingsPaid = bookingRepository.findAllByStatus(BookingStatus.PAID);
+            for (Booking pendingBooking : bookings) {
+                for (Booking paidBooking : bookingsPaid) {
+                    if (pendingBooking.getStartTime().before(paidBooking.getEndTime()) &&
+                            pendingBooking.getEndTime().after(paidBooking.getStartTime())) {
+                        throw new IllegalStateException("Time conflict detected for booking ID: " + pendingBooking.getId());
+                    }
+                }
+            }
+            long amount = getAmount(bookings);
+            long discountAmount = 0;
+            Voucher voucher = null;
+            if (!paymentRequest.voucherCode.isEmpty()){
+                voucher = voucherRepository.findByCodeAndDeletedFalse(paymentRequest.voucherCode);
+                if (voucher == null){
+                    throw new RuntimeException("Invalid voucher code");
+                }
+                if (!voucher.isValid()){
+                    throw new RuntimeException("This voucher expired");
+                }
+                if (!voucher.canUse()){
+                    throw new RuntimeException("This voucher is out of use.");
+                }
+                discountAmount = voucher.calculateDiscount(amount/100L);
+                amount -= (discountAmount*100L);
+            }
             if (bookings.size() == paymentRequest.bookingIds.size()){
                 String vnp_Version = "2.1.0";
                 String vnp_Command = "pay";
                 String orderType = "other";
-                long amount = getAmount(bookings);
                 String bankCode = paymentRequest.bankCode;
                 String vnp_TxnRef = VNPayUtils.getRandomNumber(8);
                 String vnp_IpAddr = VNPayUtils.getIpAddress(request);
@@ -122,6 +155,11 @@ public class PaymentService {
                 payment.setAmount(amount/100);
                 payment.setTxnRef(vnp_TxnRef);
                 payment.setOrderInfo(vnp_OrderInfo);
+                if (!paymentRequest.voucherCode.isEmpty() && voucher != null){
+                    payment.setVoucherCode(voucher.getCode());
+                    payment.setVoucherDiscount(voucher.getDiscount());
+                    payment.setDiscountAmount(discountAmount);
+                }
                 paymentRepository.save(payment);
                 return VNP_PAY_URL + "?" + queryUrl;
             } else {
@@ -182,63 +220,114 @@ public class PaymentService {
                     String booking_ids_string = vnp_OrderInfo.split("\\|")[1];
                     List<Long> booking_ids = Arrays.stream(booking_ids_string.split(",")).map(Long::parseLong).toList();
                     List<Booking> bookings = bookingRepository.findByIdIn(booking_ids);
-                    long totalAmount = 0;
-                    for (Booking booking : bookings) {
-                        List<BookingDetail> bookingDetails = booking.getBookingDetails();
-                        long temp_price = 0;
-                        for (BookingDetail bookingDetail : bookingDetails) {
-                            if (bookingDetail.getService() != null) {
-                                temp_price += bookingDetail.getService().getPrice();
-                                bookingDetail.setFinalPrice(bookingDetail.getService().getPrice());
-                            }
-                            if (bookingDetail.getCombo() != null) {
-                                temp_price += bookingDetail.getCombo().getPrice();
-                                bookingDetail.setFinalPrice(bookingDetail.getCombo().getPrice());
-                            }
-                        }
-                        booking.setTotalPrice(temp_price);
-                        totalAmount += temp_price;
+                    bookings = bookingRepository.saveAll(bookings);
+                    for (Booking booking : bookings){
+                        bookingDetailRepository.saveAll(booking.getBookingDetails());
                     }
-                    if (totalAmount == amount){
-                        bookings = bookingRepository.saveAll(bookings);
-                        for (Booking booking : bookings){
-                            bookingDetailRepository.saveAll(booking.getBookingDetails());
+                    payment.setBankCode(vnp_BankCode);
+                    payment.setTransactionNo(vnp_TransactionNo);
+                    payment.setTransactionStatus(TransactionStatus.fromCode(vnp_TransactionStatus));
+                    payment.setCardType(vnp_CardType);
+                    payment.setBankTranNo(vnp_BankTranNo);
+                    payment.setPaid_at(Timestamp.valueOf(paid_at));
+                    payment.setBookings(bookings);
+                    payment = paymentRepository.save(payment);
+                    if (payment.getVoucherCode() != null){
+                        Voucher voucher = voucherRepository.findByCodeAndDeletedFalse(payment.voucherCode);
+                        if (voucher == null) {
+                            System.out.println("cant find voucher with code " + payment.voucherCode);
+                        } else {
+                            voucher.setUses(voucher.getUses() + 1);
+                            voucherRepository.save(voucher);
                         }
-                        payment.setBankCode(vnp_BankCode);
-                        payment.setTransactionNo(vnp_TransactionNo);
-                        payment.setTransactionStatus(TransactionStatus.fromCode(vnp_TransactionStatus));
-                        payment.setCardType(vnp_CardType);
-                        payment.setBankTranNo(vnp_BankTranNo);
-                        payment.setPaid_at(Timestamp.valueOf(paid_at));
-                        payment.setBookings(bookings);
-                        payment = paymentRepository.save(payment);
-                        for (Booking booking : bookings){
-                            booking.setStatus(BookingStatus.PAID);
-                            booking.setPayment(payment);
-                        }
-                        bookingRepository.saveAll(bookings);
-                        Notification notification = new Notification();
-                        notification.setUser(payment.getBookings().get(0).getCustomer());
-                        notification.setType(NotificationType.PAYMENT_SUCCESS);
-                        notification.setTitle("Payment Success");
-                        notification.setMessage("Payment Success");
-                        notification.setTargetUrl(""); // Optionally, link to payment page
-                        notification.setSeen(false);
-                        notification = notificationRepository.save(notification);
-                        notification.setUser(null);
-                        simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
-                        return "success";
-                    } else {
-                        return "fail";
                     }
-                } else {
+                    for (Booking booking : bookings){
+                        booking.setStatus(BookingStatus.PAID);
+                        booking.setPayment(payment);
+                    }
+                    bookingRepository.saveAll(bookings);
+                    Notification notification = new Notification();
+                    notification.setUser(payment.getBookings().get(0).getCustomer());
+                    notification.setType(NotificationType.PAYMENT_SUCCESS);
+                    notification.setTitle("Payment Success");
+                    notification.setMessage("Payment Success");
+                    notification.setTargetUrl(fe_server + "/temp/payment/" + payment.getId()); // Optionally, link to payment page
+                    notification.setSeen(false);
+                    notification = notificationRepository.save(notification);
+                    notification.setUser(null);
+                    simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
+                    mailService.sendMailPaymentSuccess(payment.getBookings().get(0).getCustomer().getEmail(), notification.getTargetUrl());
+                    return "success";
+                }
+                else {
+                    System.out.println("payment đã được thanh toán.");
                     return "fail";
                 }
             } else {
+                System.out.println("payment không tồn tại.");
                 return "fail";
             }
         } else {
+            System.out.println("chữ kí không đúng.");
             return "fail";
+        }
+    }
+    public List<?> getPayments() {
+        User user = SecurityUtils.getCurrentUser();
+        if (user.getRole() == Role.ROLE_CUSTOMER){
+            return paymentMapper.toPaymentResponseNoUserList(paymentRepository.findByCustomer_Id(user.getId()));
+        } else if (user.getRole() == Role.ROLE_ADMIN) {
+            return paymentMapper.toPaymentResponseList(paymentRepository.findAll());
+        } else {
+            return null;
+        }
+    }
+    public PaymentResponse getAPayment(long id){
+        User user = SecurityUtils.getCurrentUser();
+        if (user.getRole() == Role.ROLE_CUSTOMER){
+            Optional<Payment> paymentOptional = paymentRepository.findByIdAndCustomerId(id, user.getId());
+            if (paymentOptional.isPresent()){
+                return paymentMapper.toPaymentResponse(paymentOptional.get());
+            }
+        } else if (user.getRole() == Role.ROLE_ADMIN) {
+            Optional<Payment> paymentOptional = paymentRepository.findById(id);
+            if (paymentOptional.isPresent()){
+                return paymentMapper.toPaymentResponse(paymentOptional.get());
+            }
+        }
+        return null;
+    }
+    public BookingResponseAdmin cashPayment(long id){
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking!=null){
+            if (booking.getStatus() == BookingStatus.PENDING){
+                booking.setStatus(BookingStatus.PAID);
+                Payment payment = new Payment();
+                List<BookingDetail> bookingDetails = booking.getBookingDetails();
+                long temp_price = 0;
+                for (BookingDetail bookingDetail : bookingDetails){
+                    if (bookingDetail.getService() != null) {
+                        temp_price += bookingDetail.getService().getPrice();
+                        bookingDetail.setFinalPrice(bookingDetail.getService().getPrice());
+                    }
+                    if (bookingDetail.getCombo() != null) {
+                        temp_price += bookingDetail.getCombo().getPrice();
+                        bookingDetail.setFinalPrice(bookingDetail.getCombo().getPrice());
+                    }
+                }
+                booking.setTotalPrice(temp_price);
+                payment.setAmount(temp_price);
+                payment.setPaid_at(new Timestamp(System.currentTimeMillis()));
+                payment.setCardType("CASH");
+                paymentRepository.save(payment);
+                booking.setPayment(payment);
+                bookingRepository.save(booking);
+                return bookingMapper.toResponseAdmin(booking);
+            } else {
+                throw new RuntimeException("Only booking in pending status can be paid by cash.");
+            }
+        } else {
+            throw new RuntimeException("Can't find booking with id " + id);
         }
     }
 }

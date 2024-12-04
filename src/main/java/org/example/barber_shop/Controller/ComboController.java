@@ -23,6 +23,12 @@ public class ComboController {
                 HttpStatus.OK.value(), "ALL COMBOS", comboService.getAllCombo()
         );
     }
+    @GetMapping("/get-one-combo/{id}")
+    public ApiResponse<?> getComboById(@PathVariable long id) {
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "COMBO ID" + id, comboService.getComboById(id)
+        );
+    }
 
     @PostMapping(value = "/add-combo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<?> addCombo(@ModelAttribute ComboRequest comboRequest) throws IOException {
@@ -38,7 +44,7 @@ public class ComboController {
             );
         } else {
             return new ApiResponse<>(
-                    HttpStatus.CREATED.value(), "DELETE FAIL", null
+                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "DELETE FAIL", null
             );
         }
     }

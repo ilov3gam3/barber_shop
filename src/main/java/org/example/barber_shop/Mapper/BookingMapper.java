@@ -13,9 +13,13 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
     BookingResponseNoUser toResponse(Booking booking);
+    @Mapping(source = "review", target = "review")
+    @Mapping(source = "review.details", target = "review.reviewDetails")
     List<BookingResponseNoUser> toResponses(List<Booking> bookings);
     List<WorkScheduleResponse> toWorkScheduleResponses(List<Booking> bookings);
     @Mapping(source = "customer", target = "customer")
     List<BookingResponseNoStaff> toResponseNoStaff(List<Booking> bookings);
     List<BookingResponseAdmin> toResponseAdmin(List<Booking> bookings);
+    BookingResponseAdmin toResponseAdmin(Booking booking);
+    BookingResponseNoStaff toResponseNoStaff(Booking booking);
 }

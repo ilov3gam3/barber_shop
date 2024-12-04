@@ -2,22 +2,17 @@ package org.example.barber_shop.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Constants.ReviewDetailType;
 import org.example.barber_shop.DTO.Combo.ComboUpdateRequest;
+import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Combo.ComboRequest;
 import org.example.barber_shop.DTO.Combo.ComboResponse;
-import org.example.barber_shop.Entity.Combo;
-import org.example.barber_shop.Entity.File;
-import org.example.barber_shop.Entity.Service;
-import org.example.barber_shop.Entity.User;
-import org.example.barber_shop.Exception.ServiceNotFoundException;
 import org.example.barber_shop.Mapper.ComboMapper;
-import org.example.barber_shop.Repository.ComboRepository;
-import org.example.barber_shop.Repository.FileRepository;
-import org.example.barber_shop.Repository.ServiceRepository;
-import org.example.barber_shop.Repository.UserRepository;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +25,7 @@ public class ComboService {
     private final FileUploadService fileUploadService;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
+    private final ReviewDetailRepository reviewDetailRepository;
 
     public ComboResponse addCombo(ComboRequest comboRequest) throws IOException {
         List<Service> services = serviceRepository.findAllById(comboRequest.serviceIds);
@@ -58,13 +54,57 @@ public class ComboService {
             Combo savedCombo = comboRepository.save(combo);
             return comboMapper.toResponse(savedCombo);
         } else {
-            throw new ServiceNotFoundException("Invalid ids, no service is found with provided ids");
+            throw new RemoteException("Invalid ids, no service is found with provided ids");
         }
     }
 
     public List<ComboResponse> getAllCombo(){
         List<Combo> combos = comboRepository.findByDeletedFalse();
-        return comboMapper.toResponses(combos);
+        List<ComboResponse> comboResponses =  comboMapper.toResponses(combos);
+        List<ReviewDetail> reviewDetails = reviewDetailRepository.findByTypeAndBookingDetail_ComboIn(ReviewDetailType.COMBO, combos);
+        for (int i = 0; i < combos.size(); i++) {
+            int bookingCount = 0;
+            int sumRating = 0;
+            for (int j = 0; j < reviewDetails.size(); j++) {
+                if (Objects.equals(combos.get(i).getId(), reviewDetails.get(j).getBookingDetail().getCombo().getId())) {
+                    sumRating += reviewDetails.get(j).getRating();
+                    bookingCount++;
+                }
+            }
+            comboResponses.get(i).bookingCount = bookingCount;
+            if (bookingCount == 0){
+                comboResponses.get(i).rating = 0;
+            } else {
+                comboResponses.get(i).rating = (float) sumRating /bookingCount;
+            }
+        }
+        return comboResponses;
+    }
+    public ComboResponse getComboById(long id){
+        Optional<Combo> comboOptional = comboRepository.findById(id);
+        if (comboOptional.isPresent()) {
+            Combo combo = comboOptional.get();
+            List<ReviewDetail> reviewDetails = reviewDetailRepository.findByTypeAndBookingDetail_Combo(ReviewDetailType.COMBO, combo);
+            ComboResponse comboResponse = comboMapper.toResponse(combo);
+            if (reviewDetails.isEmpty()){
+                comboResponse.rating = 0;
+                comboResponse.bookingCount = 0;
+            } else {
+                int bookingCount = 0;
+                int sumRating = 0;
+                for (int i = 0; i < reviewDetails.size(); i++) {
+                    if (Objects.equals(combo.getId(), reviewDetails.get(i).getBookingDetail().getCombo().getId())) {
+                        sumRating += reviewDetails.get(i).getRating();
+                        bookingCount++;
+                    }
+                }
+                comboResponse.rating = (float) sumRating / bookingCount;
+                comboResponse.bookingCount = bookingCount;
+            }
+            return comboResponse;
+        } else {
+            throw new RuntimeException("Invalid id, no combo is found with provided id " + id);
+        }
     }
     public boolean delete(long id){
         Optional<Combo> comboOptional = comboRepository.findById(id);
@@ -115,6 +155,11 @@ public class ComboService {
                     combo.getImages().add(savedFile);
                 }
             }
+            combo.setName(comboUpdateRequest.name);
+            combo.setDescription(comboUpdateRequest.description);
+            combo.setPrice(comboUpdateRequest.price);
+            combo.setEstimateTime(comboUpdateRequest.estimateTime);
+            combo = comboRepository.save(combo);
             return comboMapper.toResponse(comboRepository.save(combo));
         } else {
             throw new RuntimeException("Combo id not found");

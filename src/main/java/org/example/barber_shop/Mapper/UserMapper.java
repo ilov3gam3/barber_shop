@@ -1,5 +1,6 @@
 package org.example.barber_shop.Mapper;
 
+import org.example.barber_shop.DTO.User.StaffResponse;
 import org.example.barber_shop.DTO.User.UserResponse;
 import org.example.barber_shop.DTO.User.RegisterRequest;
 import org.example.barber_shop.DTO.User.UserResponseNoFile;
@@ -14,4 +15,6 @@ public interface UserMapper {
     UserResponse toResponse(User user);
     List<UserResponse> toResponses(List<User> users);
     UserResponseNoFile toResponseNoFile(User user);
+    StaffResponse toStaffResponse(User user);
+    List<StaffResponse> toStaffResponses(List<User> users);
 }

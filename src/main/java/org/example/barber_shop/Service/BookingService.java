@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.DTO.Booking.*;
 import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.BookingMapper;
+import org.example.barber_shop.Mapper.ReviewDetailMapper;
 import org.example.barber_shop.Util.SecurityUtils;
-import org.example.barber_shop.Exception.UserNotFoundException;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.TimeUtil;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -30,12 +30,14 @@ public class BookingService {
     private final BookingMapper bookingMapper;
     private final StaffShiftRepository staffShiftRepository;
     private final PaymentRepository paymentRepository;
-    private final SimpMessagingTemplate simpMessagingTemplate;
-    private final NotificationRepository notificationRepository;
+    private final ReviewDetailMapper reviewDetailMapper;
+
     public boolean isTimeValid(User staff, Timestamp startTime, Timestamp endTime) {
-        List<Booking> bookings = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.PAID, endTime, startTime);
-        return bookings.isEmpty();
+        List<Booking> bookings1 = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.PAID, endTime, startTime);
+        List<Booking> bookings2 = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.PENDING, endTime, startTime);
+        return bookings1.isEmpty() && bookings2.isEmpty();
     }
+
     public boolean isTimeInAssignedShift(User staff, Timestamp startTime, Timestamp endTime) {
         LocalDate localDate = startTime.toLocalDateTime().toLocalDate();
         List<StaffShift> staffShifts = staffShiftRepository.findByStaffIdAndDate(staff.getId(), localDate);
@@ -68,9 +70,11 @@ public class BookingService {
         }
         return false;
     }
+
     private boolean timeOverlaps(LocalTime blockStart, LocalTime blockEnd, LocalTime bookingStart, LocalTime bookingEnd) {
         return !(bookingStart.isBefore(blockStart) || bookingEnd.isAfter(blockEnd));
     }
+
     private static class TimeBlock {
         LocalTime startTime;
         LocalTime endTime;
@@ -80,8 +84,9 @@ public class BookingService {
             this.endTime = endTime;
         }
     }
+
     public BookingResponseNoUser addBooking(BookingRequest bookingRequest) {
-        if (bookingRequest.startTime.after(new Timestamp(System.currentTimeMillis()))){
+        if (bookingRequest.startTime.after(new Timestamp(System.currentTimeMillis()))) {
             Optional<User> staff = userRepository.findById(bookingRequest.staff_id);
             if (staff.isPresent()) {
                 User staff_checked = staff.get();
@@ -118,24 +123,33 @@ public class BookingService {
                         bookingRepository.save(booking);
                         return bookingMapper.toResponse(booking);
                     } else {
-                        throw new RuntimeException("Staff has no shift on this time.");
+//                        throw new LocalizedException("estimate.end.time.staff.no.shift", endTime, staff_checked.getName(), bookingRequest.startTime, endTime);
+                        throw new RuntimeException("Estimate end time is " + endTime + ".Staff "+ staff_checked.getName() +" has no shift from " + bookingRequest.startTime + " to " + endTime);
                     }
                 } else {
-                    throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
+                    throw new RuntimeException("Estimate end time is " + endTime + ".Conflict with staff's time, "+ staff_checked.getName() +" already have a booking from " + bookingRequest.startTime + " to " + endTime);
                 }
             } else {
-                throw new UserNotFoundException("Staff not found.");
+                throw new RuntimeException("Staff not found.");
             }
         } else {
             throw new RuntimeException("Start time must be in the future.");
         }
 
     }
-    public List<BookingResponseNoUser> getBookingsOfCustomers(){
+
+    public List<BookingResponseNoUser> getBookingsOfCustomers() {
         long userId = SecurityUtils.getCurrentUserId();
         List<Booking> bookings = bookingRepository.findByCustomer_Id(userId);
-        return bookingMapper.toResponses(bookings);
+        List<BookingResponseNoUser> bookingResponseNoUsers = bookingMapper.toResponses(bookings);
+        for (int i = 0; i < bookingResponseNoUsers.size(); i++) {
+            if (bookings.get(i).getReview() != null){
+                bookingResponseNoUsers.get(i).review.reviewDetails = reviewDetailMapper.toReviewDetailResponseList(bookings.get(i).getReview().getDetails());
+            }
+        }
+        return bookingResponseNoUsers;
     }
+
     /*public BookingResponseNoUser confirmBooking(long booking_id){
         long staff_id = SecurityUtils.getCurrentUserId();
         Booking booking = bookingRepository.findByIdAndStatusAndStaff_Id(booking_id, BookingStatus.PENDING, staff_id);
@@ -173,7 +187,8 @@ public class BookingService {
         LocalDate endDate = startDate.plusDays(6);
         return new LocalDate[]{startDate, endDate};
     }
-    public List<WorkScheduleResponse> getStaffWorkScheduleInWeek(Integer week, Integer year, long staff_id){
+
+    public List<WorkScheduleResponse> getStaffWorkScheduleInWeek(Integer week, Integer year, long staff_id) {
         if (week == null && year == null) {
             LocalDate today = LocalDate.now();
             WeekFields weekFields = WeekFields.of(Locale.getDefault());
@@ -193,11 +208,20 @@ public class BookingService {
         List<StaffShift> staffShifts = staffShiftRepository.findByStaffIdAndDateBetween(staff_id, startDateLocal, endDateLocal);
         return bookingMapper.toWorkScheduleResponses(bookingRepository.findByStaff_IdAndStartTimeBetweenAndStatus(staff_id, startDate, endDate, BookingStatus.PAID));
     }
-    public List<BookingResponseNoStaff> getBookingsOfStaff(){
+
+    public List<BookingResponseNoStaff> getBookingsOfStaff() {
         long staffId = SecurityUtils.getCurrentUserId();
-        return bookingMapper.toResponseNoStaff(bookingRepository.findByStaff_Id(staffId));
+        List<Booking> bookings = bookingRepository.findByStaff_Id(staffId);
+        List<BookingResponseNoStaff> bookingResponseNoStaffs = bookingMapper.toResponseNoStaff(bookings);
+        for (int i = 0; i < bookingResponseNoStaffs.size(); i++) {
+            if (bookings.get(i).getReview() != null){
+                bookingResponseNoStaffs.get(i).review.reviewDetails = reviewDetailMapper.toReviewDetailResponseList(bookings.get(i).getReview().getDetails());
+            }
+        }
+        return bookingResponseNoStaffs;
     }
-    public BookingResponseNoUser adminBook(BookingRequest bookingRequest){
+
+    public BookingResponseNoUser adminBook(BookingRequest bookingRequest) {
         Optional<User> staff = userRepository.findById(bookingRequest.staff_id);
         if (staff.isPresent()) {
             User staff_checked = staff.get();
@@ -258,14 +282,15 @@ public class BookingService {
                 throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
             }
         } else {
-            throw new UserNotFoundException("Staff not found.");
+            throw new RuntimeException("Staff not found.");
         }
     }
-    public void cancelBooking(long id){
+
+    public void cancelBooking(long id) {
         Optional<Booking> booking = bookingRepository.findById(id);
         if (booking.isPresent()) {
             Booking checkedBooking = booking.get();
-            if (checkedBooking.getStatus() == BookingStatus.PENDING){
+            if (checkedBooking.getStatus() == BookingStatus.PENDING) {
                 checkedBooking.setStatus(BookingStatus.CANCELLED);
                 bookingRepository.save(checkedBooking);
             } else {
@@ -275,7 +300,8 @@ public class BookingService {
             throw new RuntimeException("Booking not found.");
         }
     }
-    public BookingResponseNoUser updateBooking(BookingUpdateRequest bookingUpdateRequest){
+
+    public BookingResponseNoUser updateBooking(BookingUpdateRequest bookingUpdateRequest) {
         User user = SecurityUtils.getCurrentUser();
         Booking booking = bookingRepository.findByIdAndCustomerAndStatus(bookingUpdateRequest.bookingId, user, BookingStatus.PENDING);
         if (booking != null) {
@@ -293,8 +319,8 @@ public class BookingService {
                     tempTime += combo.getEstimateTime();
                 }
                 Timestamp endTime = TimeUtil.calculateEndTime(bookingUpdateRequest.startTime, tempTime);
-                if (isTimeValid(staff_checked, bookingUpdateRequest.startTime, endTime)){
-                    if (isTimeInAssignedShift(staff_checked, bookingUpdateRequest.startTime, endTime)){
+                if (isTimeValid(staff_checked, bookingUpdateRequest.startTime, endTime)) {
+                    if (isTimeInAssignedShift(staff_checked, bookingUpdateRequest.startTime, endTime)) {
                         booking.setNote(bookingUpdateRequest.note);
                         booking.setStartTime(bookingUpdateRequest.startTime);
                         booking.setEndTime(endTime);
@@ -317,20 +343,29 @@ public class BookingService {
                     throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
                 }
             } else {
-                throw new UserNotFoundException("Staff not found.");
+                throw new RuntimeException("Staff not found.");
             }
         } else {
             throw new RuntimeException("Booking not found or can not be update now.");
         }
     }
-    public List<BookingResponseAdmin> adminGetBookings(){
-        return bookingMapper.toResponseAdmin(bookingRepository.findAll());
+
+    public List<BookingResponseAdmin> adminGetBookings() {
+        List<Booking> bookings = bookingRepository.findAll();
+        List<BookingResponseAdmin> bookingResponseAdmins = bookingMapper.toResponseAdmin(bookings);
+        for (int i = 0; i < bookingResponseAdmins.size(); i++) {
+            if (bookings.get(i).getReview() != null){
+                bookingResponseAdmins.get(i).review.reviewDetails = reviewDetailMapper.toReviewDetailResponseList(bookings.get(i).getReview().getDetails());
+            }
+        }
+        return bookingResponseAdmins;
     }
-    public BookingResponseNoUser updateBooking(long id){
-        Optional<Booking> bookingOptional = bookingRepository.findById(id);
-        if (bookingOptional.isPresent()) {
-            Booking booking = bookingOptional.get();
-            if (booking.getStatus() == BookingStatus.PAID){
+
+    public BookingResponseNoUser updateBooking(long id) {
+        User staff = SecurityUtils.getCurrentUser();
+        Booking booking = bookingRepository.findByIdAndStaff(id, staff);
+        if (booking != null) {
+            if (booking.getStatus() == BookingStatus.PAID) {
                 if (booking.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
                     booking.setStatus(BookingStatus.COMPLETED);
                     return bookingMapper.toResponse(bookingRepository.save(booking));
@@ -341,15 +376,16 @@ public class BookingService {
                 throw new RuntimeException("Booking can only be complete if in PAID status.");
             }
         } else {
-            throw new RuntimeException("Booking not found.");
+            throw new RuntimeException("Booking not found, or this is not your booking.");
         }
     }
-    public BookingResponseNoUser noShowBooking(long id){
+
+    public BookingResponseNoUser noShowBooking(long id) {
         Optional<Booking> bookingOptional = bookingRepository.findById(id);
         if (bookingOptional.isPresent()) {
             Booking booking = bookingOptional.get();
-            if (booking.getStatus() == BookingStatus.PAID){
-                if (booking.getEndTime().before(new Timestamp(System.currentTimeMillis()))){
+            if (booking.getStatus() == BookingStatus.PAID) {
+                if (booking.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
                     booking.setStatus(BookingStatus.NO_SHOW);
                     return bookingMapper.toResponse(bookingRepository.save(booking));
                 } else {
@@ -358,6 +394,50 @@ public class BookingService {
             } else {
                 throw new RuntimeException("Booking can only be set to NO_SHOW if in PAID status.");
             }
+        } else {
+            throw new RuntimeException("Booking not found.");
+        }
+    }
+    public BookingResponseAdmin getBookingWithId(long id){
+        User user = SecurityUtils.getCurrentUser();
+        switch (user.getRole()){
+            case ROLE_ADMIN -> {
+                Optional<Booking> bookingOptional = bookingRepository.findById(id);
+                if (bookingOptional.isPresent()) {
+                    return bookingMapper.toResponseAdmin(bookingOptional.get());
+                } else {
+                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                }
+            }
+            case ROLE_CUSTOMER -> {
+                Booking booking = bookingRepository.findByIdAndCustomer(id, user);
+                if (booking != null) {
+                    return bookingMapper.toResponseAdmin(booking);
+                }
+                else {
+                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                }
+            }
+            case ROLE_STAFF -> {
+                Booking booking = bookingRepository.findByIdAndStaff(id, user);
+                if (booking != null) {
+                    return bookingMapper.toResponseAdmin(booking);
+                }
+                else {
+                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                }
+            }
+            default -> {
+                throw new RuntimeException("Something went wrong.");
+            }
+        }
+    }
+    public BookingResponseNoStaff rejectBooking(long id){
+        User staff = SecurityUtils.getCurrentUser();
+        Booking booking = bookingRepository.findByIdAndStatusAndStaff_Id(id, BookingStatus.PENDING, staff.getId());
+        if (booking != null) {
+            booking.setStatus(BookingStatus.REJECTED);
+            return bookingMapper.toResponseNoStaff(bookingRepository.save(booking));
         } else {
             throw new RuntimeException("Booking not found.");
         }

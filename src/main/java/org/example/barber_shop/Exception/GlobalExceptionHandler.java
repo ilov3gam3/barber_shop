@@ -1,36 +1,30 @@
 package org.example.barber_shop.Exception;
 
+import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-    @ExceptionHandler(EmailExistException.class)
-    public ApiResponse<?> emailExistException(EmailExistException e) {
-        e.printStackTrace();
-        return new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
-    }
+import java.util.Locale;
+import java.util.Map;
 
-    @ExceptionHandler(PhoneExistException.class)
-    public ApiResponse<?> phoneExistException(PhoneExistException e) {
+@RestControllerAdvice
+@RequiredArgsConstructor
+public class GlobalExceptionHandler {
+    private final MessageSource messageSource;
+
+
+    @ExceptionHandler(LocalizedException.class)
+    public ResponseEntity<ApiResponse<?>> localizedException(LocalizedException e) {
         e.printStackTrace();
-        return new ApiResponse<>(HttpStatus.CONFLICT.value(), e.getMessage(), null);
-    }
-    @ExceptionHandler(PasswordMismatchException.class)
-    public ApiResponse<?> passwordMismatchException(PasswordMismatchException e) {
-        e.printStackTrace();
-        return new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
-    }
-    @ExceptionHandler(Exception.class)
-    public ApiResponse<?> exception(Exception e) {
-        e.printStackTrace();
-        return new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
-    }
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ApiResponse<?> illegalArgumentException(IllegalArgumentException e) {
-        e.printStackTrace();
-        return new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
+        String messageVi = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("vi"));
+        System.err.println(messageVi);
+        String messageKo = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("ko"));
+        Map<String, String> map = Map.of("vi", messageVi, "ko", messageKo);
+        ApiResponse<?> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), map);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -30,4 +30,23 @@ public class PaymentController {
     public void getVNPayResult(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.sendRedirect(fe_server + "?payment_status=" + paymentService.handleVnpayResult(request));
     }
+
+    @GetMapping("")
+    public ApiResponse<?> getPayments(){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "PAYMENTS", paymentService.getPayments()
+        );
+    }
+    @GetMapping("/{id}")
+    public ApiResponse<?> getPayments(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "PAYMENTS", paymentService.getAPayment(id)
+        );
+    }
+    @PutMapping("/cash/{id}")
+    public ApiResponse<?> cashPayment(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "PAID", paymentService.cashPayment(id)
+        );
+    }
 }

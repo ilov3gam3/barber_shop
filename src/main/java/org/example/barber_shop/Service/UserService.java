@@ -3,23 +3,17 @@ package org.example.barber_shop.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Config.SecurityUser;
-import org.example.barber_shop.Exception.UserNotFoundException;
+import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.*;
+import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.File.FileResponse;
 import org.example.barber_shop.DTO.User.*;
-import org.example.barber_shop.Entity.File;
-import org.example.barber_shop.Entity.LoggedOutToken;
-import org.example.barber_shop.Entity.User;
-import org.example.barber_shop.Exception.EmailExistException;
-import org.example.barber_shop.Exception.PasswordMismatchException;
-import org.example.barber_shop.Exception.PhoneExistException;
 import org.example.barber_shop.Mapper.FileMapper;
 import org.example.barber_shop.Mapper.UserMapper;
-import org.example.barber_shop.Repository.FileRepository;
-import org.example.barber_shop.Repository.LoggedOutTokenRepository;
-import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Util.JWTUtil;
+import org.example.barber_shop.Util.Validator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -34,6 +28,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,6 +45,9 @@ public class UserService {
     private final FileRepository fileRepository;
     private final FileMapper fileMapper;
     private final LoggedOutTokenRepository loggedOutTokenRepository;
+    private final StaffShiftRepository staffShiftRepository;
+    private final StaffSalaryRepository staffSalaryRepository;
+    private final BookingRepository bookingRepository;
 
     @Value("${token_ttl}")
     private int tokenTtl;
@@ -61,30 +59,44 @@ public class UserService {
     }
 
     public UserResponse register(RegisterRequest registerRequest) {
-        User user = userRepository.findByEmailOrPhone(registerRequest.email, registerRequest.phone);
-        if (user == null) {
-            if (registerRequest.password.equals(registerRequest.re_password)){
-                User user1 = userMapper.toEntity(registerRequest);
-                user1.setRole(Role.ROLE_CUSTOMER);
-                user1.setAvatar(fileRepository.findByName("default-avatar"));
-                user1.setPassword(passwordEncoder.encode(registerRequest.password));
-                String token = UUID.randomUUID() + "-" + getTokenTTL();
-                user1.setBlocked(false);
-                user1.setVerified(false);
-                user1.setToken(token);
-                mailService.sendMailToken(user1.getEmail(), "Verify your email address", token);
-                User savedUser = userRepository.save(user1);
-                return userMapper.toResponse(savedUser);
+        if (Validator.isValidEmail(registerRequest.email)){
+            if (Validator.isValidPhone(registerRequest.phone)){
+                if (Validator.isValidPassword(registerRequest.password)){
+                    User user = userRepository.findByEmailOrPhone(registerRequest.email, registerRequest.phone);
+                    if (user == null) {
+                        if (registerRequest.password.equals(registerRequest.re_password)){
+                            User user1 = userMapper.toEntity(registerRequest);
+                            user1.setRole(Role.ROLE_CUSTOMER);
+                            user1.setAvatar(fileRepository.findByName("default-avatar"));
+                            user1.setPassword(passwordEncoder.encode(registerRequest.password));
+                            String token = UUID.randomUUID() + "-" + getTokenTTL();
+                            user1.setBlocked(false);
+                            user1.setVerified(false);
+                            user1.setToken(token);
+                            mailService.sendMailToken(user1.getEmail(), "Verify your email address", token);
+                            User savedUser = userRepository.save(user1);
+                            return userMapper.toResponse(savedUser);
+                        } else {
+                            throw new RuntimeException("Passwords do not match.");
+                        }
+                    } else {
+                        if (user.getPhone().equals(registerRequest.phone)) {
+                            throw new RuntimeException("This phone number is already in use.");
+                        } else {
+                            throw new RuntimeException("This email address is already in use.");
+                        }
+                    }
+                } else {
+                    throw new LocalizedException("invalid.password.format");
+                }
             } else {
-                throw new PasswordMismatchException("Passwords do not match.");
+                throw new RuntimeException("Invalid phone number format.");
             }
+
         } else {
-            if (user.getPhone().equals(registerRequest.phone)) {
-                throw new PhoneExistException("This phone number is already in use.");
-            } else {
-                throw new EmailExistException("This email address is already in use.");
-            }
+            throw new RuntimeException("Invalid email address format.");
         }
+
     }
     public static long extractTTLFromToken(String token) {
         String[] parts = token.split("-");
@@ -132,16 +144,24 @@ public class UserService {
     }
     public UserResponse getProfile(){
         long id = SecurityUtils.getCurrentUserId();
-        User user = userRepository.findById(id).get();
-        return userMapper.toResponse(user);
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty()){
+            throw new RuntimeException("User not found.");
+        } else {
+            return userMapper.toResponse(user.get());
+        }
     }
     public UserResponse updateProfile(UpdateProfileRequest updateProfileRequest){
-        User user = userRepository.findById(SecurityUtils.getCurrentUserId()).get();
-        user.setName(updateProfileRequest.name);
-        user.setPhone(updateProfileRequest.phone);
-        user.setDob(updateProfileRequest.dob);
-        User savedUser = userRepository.save(user);
-        return userMapper.toResponse(savedUser);
+        User user = userRepository.findById(SecurityUtils.getCurrentUserId()).orElse(null);
+        if (user != null){
+            user.setName(updateProfileRequest.name);
+            user.setPhone(updateProfileRequest.phone);
+            user.setDob(updateProfileRequest.dob);
+            User savedUser = userRepository.save(user);
+            return userMapper.toResponse(savedUser);
+        } else {
+            throw new RuntimeException("User not found.");
+        }
     }
     public FileResponse updateAvatar(MultipartFile file) throws IOException {
         JsonNode jsonNode = fileUploadService.uploadToImgBB(file);
@@ -158,8 +178,28 @@ public class UserService {
         userRepository.save(user);
         return fileMapper.toFileResponse(savedFile);
     }
-    public List<UserResponse> getAllStaffs(){
-        return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_STAFF));
+    public List<StaffResponse> getAllStaffs(){
+        List<User> staffs = userRepository.findAllByRole(Role.ROLE_STAFF);
+        List<Booking> bookings = bookingRepository.findByStaffIn(staffs);
+        List<StaffResponse> staffResponses = userMapper.toStaffResponses(staffs);
+        for (int i = 0; i < staffs.size(); i++) {
+            if (bookings.isEmpty()){
+                staffResponses.get(i).rating = 0;
+                staffResponses.get(i).bookingCount = 0;
+            } else {
+                int sumRating = 0;
+                int bookingCount = 0;
+                for (int j = 0; j < bookings.size(); j++) {
+                    if (Objects.equals(staffs.get(i).getId(), bookings.get(j).getStaff().getId())) {
+                        sumRating += bookings.get(i).getReview().getStaffRating();
+                        bookingCount++;
+                    }
+                }
+                staffResponses.get(i).rating = (float) sumRating /bookingCount;
+                staffResponses.get(i).bookingCount = bookingCount;
+            }
+        }
+        return staffResponses;
     }
     public List<UserResponse> getAllCustomers(){
         return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_CUSTOMER));
@@ -183,12 +223,13 @@ public class UserService {
     }
     public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest){
         User user = userRepository.findByEmail(forgotPasswordRequest.email);
-        if (user != null){
-            String token = UUID.randomUUID() + "-" + getTokenTTL();
-            user.setToken(token);
-            userRepository.save(user);
-            mailService.sendMailToken(forgotPasswordRequest.email, "Reset your password", token);
+        if (user == null){
+            return;
         }
+        String token = UUID.randomUUID() + "-" + getTokenTTL();
+        user.setToken(token);
+        userRepository.save(user);
+        mailService.sendMailToken(forgotPasswordRequest.email, "Reset your password", token);
     }
     public void resetPassword(ResetPasswordRequest resetPasswordRequest){
         long ttl = extractTTLFromToken(resetPasswordRequest.token);
@@ -202,7 +243,7 @@ public class UserService {
                     user.setToken(null);
                     userRepository.save(user);
                 } else {
-                    throw new PasswordMismatchException("Passwords do not match.");
+                    throw new RuntimeException("Passwords do not match.");
                 }
             }
         } else {
@@ -210,8 +251,16 @@ public class UserService {
         }
     }
     public UserResponse updateUser(UpdateUserRequest updateUserRequest){
-        Optional<User> userOptional = userRepository.findById(SecurityUtils.getCurrentUserId());
+        Optional<User> userOptional = userRepository.findById(updateUserRequest.id);
         if (userOptional.isPresent()){
+            User checkMail = userRepository.findByEmail(updateUserRequest.email);
+            if (checkMail != null && checkMail.getId() != updateUserRequest.id){
+                throw new RuntimeException("Email already in use by another user.");
+            }
+            User checkPhone = userRepository.findByPhone(updateUserRequest.phone);
+            if (checkPhone != null && checkPhone.getId() != updateUserRequest.id){
+                throw new RuntimeException("Phone already in use by another user.");
+            }
             User user = userOptional.get();
             user.setName(updateUserRequest.name);
             user.setPhone(updateUserRequest.phone);
@@ -222,21 +271,75 @@ public class UserService {
                     user.setPassword(passwordEncoder.encode(updateUserRequest.password));
                 }
             }
-            return userMapper.toResponse(userRepository.save(user));
+            if (user.getRole() != Role.ROLE_STAFF && updateUserRequest.role == Role.ROLE_STAFF){
+                user.setRole(updateUserRequest.role);
+                StaffSalary staffSalary = new StaffSalary();
+                staffSalary.setStaff(user);
+                staffSalary.setRate(25000);
+                staffSalary.setPercentage(10);
+                staffSalaryRepository.save(staffSalary);
+            }
+            user.setBlocked(updateUserRequest.blocked);
+            user = userRepository.save(user);
+            return userMapper.toResponse(user);
         } else {
-            throw new UserNotFoundException("User not found with id " + updateUserRequest.id);
+            throw new RuntimeException("User not found with id " + updateUserRequest.id);
         }
     }
     public UserResponse adminCreateUser(AdminCreateUser adminCreateUser){
-        User user = new User();
-        user.setName(adminCreateUser.name);
-        user.setEmail(adminCreateUser.email);
-        user.setPhone(adminCreateUser.phone);
-        user.setDob(adminCreateUser.dob);
-        user.setPassword(passwordEncoder.encode(adminCreateUser.password));
-        user.setRole(adminCreateUser.role);
-        user.setBlocked(false);
-        user.setVerified(true);
-        return userMapper.toResponse(userRepository.save(user));
+        if (Validator.isValidEmail(adminCreateUser.email)){
+            if (Validator.isValidPhone(adminCreateUser.phone)){
+                if (Validator.isValidPassword(adminCreateUser.password)){
+                    if (userRepository.findByEmail(adminCreateUser.email) == null){
+                        if (userRepository.findByPhone(adminCreateUser.phone) == null){
+                            User user = new User();
+                            user.setName(adminCreateUser.name);
+                            user.setEmail(adminCreateUser.email);
+                            user.setPhone(adminCreateUser.phone);
+                            user.setDob(adminCreateUser.dob);
+                            user.setPassword(passwordEncoder.encode(adminCreateUser.password));
+                            user.setRole(adminCreateUser.role);
+                            user.setBlocked(false);
+                            user.setVerified(true);
+                            File file = fileRepository.findByName("default-avatar");
+                            user.setAvatar(file);
+                            user = userRepository.save(user);
+                            if (user.getRole() == Role.ROLE_STAFF){
+                                if (Validator.isOver18YearsOld(adminCreateUser.dob)){
+                                    StaffSalary staffSalary = new StaffSalary();
+                                    staffSalary.setStaff(user);
+                                    staffSalary.setRate(25000);
+                                    staffSalary.setPercentage(10);
+                                    staffSalaryRepository.save(staffSalary);
+                                } else {
+                                    throw new RuntimeException("Staff must be over 18.");
+                                }
+                            }
+                            return userMapper.toResponse(userRepository.save(user));
+                        } else {
+                            throw new RuntimeException("Phone number already in use.");
+                        }
+                    } else {
+                        throw new RuntimeException("Email already in use.");
+                    }
+                } else {
+                    throw new RuntimeException("Invalid password format. At least 8 characters long and 1 uppercase");
+                }
+            } else {
+                throw new RuntimeException("Invalid phone number format.");
+            }
+        } else {
+            throw new RuntimeException("Invalid email address format.");
+        }
+    }
+    public UserResponseNoFile blockUser(long id){
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()){
+            User user = userOptional.get();
+            user.setBlocked(true);
+            return userMapper.toResponseNoFile(userRepository.save(user));
+        } else {
+            throw new RuntimeException("User not found with id " + id);
+        }
     }
 }

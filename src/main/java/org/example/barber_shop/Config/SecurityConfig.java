@@ -43,10 +43,10 @@ public class SecurityConfig {
     private final TemporaryCodeService temporaryCodeService;
     @Value("${front_end_server}")
     private String front_end_server;
-    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**"};
-    private final String[] adminApi = {"/api/users", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift"};
-    private final String[] customerApi = {"/api/booking/book", "/api/payment/get-vnpay-url", "/api/booking/update-booking", "/api/booking/cancel/**"};
-    private final String[] staffApi = {"/api/booking/confirm-booking"};
+    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**", "/api/review/all", "/api/review/staff-review/**", "/api/combo/get-one-combo/**"};
+    private final String[] adminApi = {"/api/booking/complete-booking/**", "/api/users", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift", "/api/salary/**", "/api/booking/no-show-booking/**", "/api/weekly-salary", "/api/payment/cash/**", "/api/voucher/**"};
+    private final String[] customerApi = {"/api/booking/book", "/api/payment/get-vnpay-url", "/api/booking/update-booking", "/api/booking/cancel/**", "/api/review"};
+    private final String[] staffApi = {"/api/weekly-salary/staff", "api/booking/reject-booking/**"};
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.cors(cors -> cors.configurationSource(request -> {
@@ -106,7 +106,7 @@ public class SecurityConfig {
             user = userRepository.save(user);
         }
         String code = temporaryCodeService.generateCode(String.valueOf(user.getId()));
-        response.sendRedirect(front_end_server + "/?token_exchange=" + code);
+        response.sendRedirect(front_end_server + "?token_exchange=" + code);
     }
     @Bean
     public PasswordEncoder passwordEncoder(){

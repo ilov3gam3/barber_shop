@@ -25,7 +25,7 @@ public class StaffShiftController {
         );
     }
     @GetMapping("/get-staff-shift")
-    public ApiResponse<?> staffGetShifts(@RequestParam(required = false) Integer week, @RequestParam(required = false) Integer year, @RequestParam(required = false) long staff_id) {
+    public ApiResponse<?> staffGetShifts(@RequestParam(required = false) Integer week, @RequestParam(required = false) Integer year, @RequestParam(required = true) long staff_id) {
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "SHIFTS OF STAFF IN WEEK", shiftService.staffGetShifts(week, year, staff_id)
         );
@@ -38,7 +38,7 @@ public class StaffShiftController {
             );
         } else {
             return new ApiResponse<>(
-                    HttpStatus.OK.value(), "DELETE FAIL", null
+                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "DELETE FAIL", null
             );
         }
     }

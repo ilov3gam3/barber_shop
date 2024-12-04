@@ -40,4 +40,7 @@ public class Booking extends DistributedEntity{
     @ManyToOne
     @JoinColumn(name = "payment_id")
     private Payment payment;
+
+    @OneToOne(mappedBy = "booking")
+    private Review review;
 }

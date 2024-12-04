@@ -14,6 +14,8 @@ public class ComboResponse {
     public int estimateTime;
     public List<FileResponseNoOwner> images;
     public List<ServiceResponseNoType> services;
+    public float rating;
+    public int bookingCount;
     public Timestamp createdAt;
     public Timestamp updatedAt;
 }

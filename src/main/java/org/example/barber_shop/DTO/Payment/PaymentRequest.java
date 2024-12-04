@@ -11,4 +11,5 @@ public class PaymentRequest {
     public List<Long> bookingIds;
     public String bankCode;
     public String language;
+    public String voucherCode;
 }

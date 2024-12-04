@@ -18,7 +18,6 @@ public class Payment extends DistributedEntity{
 
     @OneToMany(mappedBy = "payment")
     private List<Booking> bookings;
-
     private long amount;
     public String txnRef;
     public String orderInfo;
@@ -29,4 +28,7 @@ public class Payment extends DistributedEntity{
     public String cardType;
     public String bankTranNo;
     public Timestamp paid_at;
+    public String voucherCode;
+    public int voucherDiscount;
+    public long discountAmount;
 }

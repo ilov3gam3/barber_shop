@@ -38,6 +38,7 @@ public class UserController {
 
     @PutMapping("/profile")
     public ApiResponse<?> updateUserProfile(@RequestBody UpdateProfileRequest updateProfileRequest){
+        System.out.println("update profile");
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
                 "PROFILE UPDATED",
@@ -84,6 +85,7 @@ public class UserController {
     }
     @PutMapping("")
     public ApiResponse<?> updateUser(@RequestBody UpdateUserRequest updateUserRequest){
+        System.out.println("update user put mapping");
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "USER UPDATED", userService.updateUser(updateUserRequest)
         );
@@ -91,7 +93,13 @@ public class UserController {
     @PostMapping("")
     public ApiResponse<?> adminCreateUser(@RequestBody AdminCreateUser adminCreateUser){
         return new ApiResponse<>(
-                HttpStatus.OK.value(), "USER UPDATED", userService.adminCreateUser(adminCreateUser)
+                HttpStatus.OK.value(), "USER CREATED", userService.adminCreateUser(adminCreateUser)
+        );
+    }
+    @PutMapping("/block/{id}")
+    public ApiResponse<?> blockUser(@PathVariable long id){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "USER BLOCKED", userService.blockUser(id)
         );
     }
 }

@@ -22,6 +22,7 @@ public class SeederService implements CommandLineRunner {
     private final ServiceRepository serviceRepository;
     private final ComboRepository comboRepository;
     private final ShiftRepository shiftRepository;
+    private final StaffSalaryRepository staffSalaryRepository;
     @Override
     public void run(String... args) throws Exception {
         if (userRepository.count() == 0){
@@ -47,6 +48,28 @@ public class SeederService implements CommandLineRunner {
             night.setEndTime(LocalTime.of(22, 0));
 
             shiftRepository.saveAll(List.of(morning, afternoon, night));
+        }
+        if (staffSalaryRepository.count() == 0) {
+            User staff2 = userRepository.findByName("staff2");
+            User staff3 = userRepository.findByName("staff3");
+            User staff4 = userRepository.findByName("staff4");
+
+            StaffSalary staffSalary = new StaffSalary();
+            staffSalary.setStaff(staff2);
+            staffSalary.setRate(25000);
+            staffSalary.setPercentage(10);
+
+            StaffSalary staffSalary2 = new StaffSalary();
+            staffSalary2.setStaff(staff3);
+            staffSalary2.setRate(30000);
+            staffSalary2.setPercentage(15);
+
+            StaffSalary staffSalary3 = new StaffSalary();
+            staffSalary3.setStaff(staff4);
+            staffSalary3.setRate(35000);
+            staffSalary3.setPercentage(17);
+
+            staffSalaryRepository.saveAll(List.of(staffSalary, staffSalary2, staffSalary3));
         }
         System.out.println("============seed done============");
     }

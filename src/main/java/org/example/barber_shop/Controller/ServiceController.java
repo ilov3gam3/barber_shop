@@ -44,7 +44,7 @@ public class ServiceController {
             );
         } else {
             return new ApiResponse<>(
-                    HttpStatus.OK.value(), "DELETE FAIL", null
+                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "DELETE FAIL", null
             );
         }
     }
