@@ -49,4 +49,10 @@ public class VoucherController {
                 HttpStatus.OK.value(), "VOUCHER LIST", voucherService.get1Vouchers(id)
         );
     }
+    @GetMapping("/available-vouchers")
+    public ApiResponse<?> getAvailableVouchers(){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "AVAILABLE VOUCHERS", voucherService.getAvailableVouchers()
+        );
+    }
 }

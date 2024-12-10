@@ -16,7 +16,6 @@ import org.example.barber_shop.Util.JWTUtil;
 import org.example.barber_shop.Util.Validator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -77,24 +76,24 @@ public class UserService {
                             User savedUser = userRepository.save(user1);
                             return userMapper.toResponse(savedUser);
                         } else {
-                            throw new RuntimeException("Passwords do not match.");
+                            throw new LocalizedException("passwords.not.match");
                         }
                     } else {
                         if (user.getPhone().equals(registerRequest.phone)) {
-                            throw new RuntimeException("This phone number is already in use.");
+                            throw new LocalizedException("phone.in.use");
                         } else {
-                            throw new RuntimeException("This email address is already in use.");
+                            throw new LocalizedException("email.in.use");
                         }
                     }
                 } else {
                     throw new LocalizedException("invalid.password.format");
                 }
             } else {
-                throw new RuntimeException("Invalid phone number format.");
+                throw new LocalizedException("invalid.phone.format");
             }
 
         } else {
-            throw new RuntimeException("Invalid email address format.");
+            throw new LocalizedException("invalid.email.format");
         }
 
     }
@@ -103,7 +102,7 @@ public class UserService {
         if (parts.length == 6) {
             return Long.parseLong(parts[5]);
         } else {
-            throw new IllegalArgumentException("Invalid token format.");
+            throw new LocalizedException("invalid.token");
         }
     }
     public static boolean isTokenValid(long ttl) {
@@ -130,14 +129,18 @@ public class UserService {
     public String login(LoginRequest loginRequest){
         User user = userRepository.findByEmail(loginRequest.email);
         if (user != null){
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password));
-            SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
-            user = securityUser.getUser();
-            return jwtUtil.generateToken(user);
+            try {
+                Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password));
+                SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+                user = securityUser.getUser();
+                return jwtUtil.generateToken(user);
+            } catch (Exception e){
+                e.printStackTrace();
+                throw new LocalizedException("invalid.credentials");
+            }
         } else {
-            throw new BadCredentialsException("Bad credentials");
+            throw new LocalizedException("invalid.credentials");
         }
-
     }
     public List<UserResponse> getAllUsers(){
         return userMapper.toResponses(userRepository.findAll());
@@ -146,7 +149,7 @@ public class UserService {
         long id = SecurityUtils.getCurrentUserId();
         Optional<User> user = userRepository.findById(id);
         if (user.isEmpty()){
-            throw new RuntimeException("User not found.");
+            throw new LocalizedException("user.not.found");
         } else {
             return userMapper.toResponse(user.get());
         }
@@ -160,7 +163,7 @@ public class UserService {
             User savedUser = userRepository.save(user);
             return userMapper.toResponse(savedUser);
         } else {
-            throw new RuntimeException("User not found.");
+            throw new LocalizedException("user.not.found");
         }
     }
     public FileResponse updateAvatar(MultipartFile file) throws IOException {
@@ -179,27 +182,39 @@ public class UserService {
         return fileMapper.toFileResponse(savedFile);
     }
     public List<StaffResponse> getAllStaffs(){
-        List<User> staffs = userRepository.findAllByRole(Role.ROLE_STAFF);
-        List<Booking> bookings = bookingRepository.findByStaffIn(staffs);
-        List<StaffResponse> staffResponses = userMapper.toStaffResponses(staffs);
-        for (int i = 0; i < staffs.size(); i++) {
-            if (bookings.isEmpty()){
-                staffResponses.get(i).rating = 0;
-                staffResponses.get(i).bookingCount = 0;
-            } else {
-                int sumRating = 0;
-                int bookingCount = 0;
-                for (int j = 0; j < bookings.size(); j++) {
-                    if (Objects.equals(staffs.get(i).getId(), bookings.get(j).getStaff().getId())) {
-                        sumRating += bookings.get(i).getReview().getStaffRating();
-                        bookingCount++;
+        try {
+            List<User> staffs = userRepository.findAllByRole(Role.ROLE_STAFF);
+            List<Booking> bookings = bookingRepository.findByStaffIn(staffs);
+            System.out.println(bookings.size());
+            List<StaffResponse> staffResponses = userMapper.toStaffResponses(staffs);
+            for (int i = 0; i < staffs.size(); i++) {
+                if (bookings.isEmpty()){
+                    staffResponses.get(i).rating = 0;
+                    staffResponses.get(i).bookingCount = 0;
+                } else {
+                    int sumRating = 0;
+                    int bookingCount = 0;
+                    for (int j = 0; j < bookings.size(); j++) {
+                        if (Objects.equals(staffs.get(i).getId(), bookings.get(j).getStaff().getId())) {
+                            if (bookings.get(j).getReview() != null){
+                                sumRating += bookings.get(j).getReview().getStaffRating();
+                            }
+                            bookingCount++;
+                        }
                     }
+                    if (bookingCount == 0){
+                        staffResponses.get(i).rating = 0;
+                    } else {
+                        staffResponses.get(i).rating = (float) sumRating /bookingCount;
+                    }
+                    staffResponses.get(i).bookingCount = bookingCount;
                 }
-                staffResponses.get(i).rating = (float) sumRating /bookingCount;
-                staffResponses.get(i).bookingCount = bookingCount;
             }
+            return staffResponses;
+        } catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
-        return staffResponses;
     }
     public List<UserResponse> getAllCustomers(){
         return userMapper.toResponses(userRepository.findAllByRole(Role.ROLE_CUSTOMER));
@@ -236,18 +251,18 @@ public class UserService {
         if (isTokenValid(ttl)){
             User user = userRepository.findByToken(resetPasswordRequest.token);
             if (user == null){
-                throw new RuntimeException("Invalid token.");
+                throw new LocalizedException("invalid.token");
             } else {
                 if (resetPasswordRequest.password.equals(resetPasswordRequest.re_password)){
                     user.setPassword(passwordEncoder.encode(resetPasswordRequest.password));
                     user.setToken(null);
                     userRepository.save(user);
                 } else {
-                    throw new RuntimeException("Passwords do not match.");
+                    throw new LocalizedException("passwords.not.match");
                 }
             }
         } else {
-            throw new RuntimeException("Invalid token.");
+            throw new LocalizedException("invalid.token");
         }
     }
     public UserResponse updateUser(UpdateUserRequest updateUserRequest){
@@ -255,11 +270,11 @@ public class UserService {
         if (userOptional.isPresent()){
             User checkMail = userRepository.findByEmail(updateUserRequest.email);
             if (checkMail != null && checkMail.getId() != updateUserRequest.id){
-                throw new RuntimeException("Email already in use by another user.");
+                throw new LocalizedException("email.in.use");
             }
             User checkPhone = userRepository.findByPhone(updateUserRequest.phone);
             if (checkPhone != null && checkPhone.getId() != updateUserRequest.id){
-                throw new RuntimeException("Phone already in use by another user.");
+                throw new LocalizedException("phone.in.use");
             }
             User user = userOptional.get();
             user.setName(updateUserRequest.name);
@@ -283,7 +298,7 @@ public class UserService {
             user = userRepository.save(user);
             return userMapper.toResponse(user);
         } else {
-            throw new RuntimeException("User not found with id " + updateUserRequest.id);
+            throw new LocalizedException("user.not.found");
         }
     }
     public UserResponse adminCreateUser(AdminCreateUser adminCreateUser){
@@ -312,24 +327,24 @@ public class UserService {
                                     staffSalary.setPercentage(10);
                                     staffSalaryRepository.save(staffSalary);
                                 } else {
-                                    throw new RuntimeException("Staff must be over 18.");
+                                    throw new LocalizedException("staff.age.restriction");
                                 }
                             }
                             return userMapper.toResponse(userRepository.save(user));
                         } else {
-                            throw new RuntimeException("Phone number already in use.");
+                            throw new LocalizedException("phone.in.use");
                         }
                     } else {
-                        throw new RuntimeException("Email already in use.");
+                        throw new LocalizedException("email.in.use");
                     }
                 } else {
-                    throw new RuntimeException("Invalid password format. At least 8 characters long and 1 uppercase");
+                    throw new LocalizedException("invalid.password.format");
                 }
             } else {
-                throw new RuntimeException("Invalid phone number format.");
+                throw new LocalizedException("invalid.phone.format");
             }
         } else {
-            throw new RuntimeException("Invalid email address format.");
+            throw new LocalizedException("invalid.email.format");
         }
     }
     public UserResponseNoFile blockUser(long id){
@@ -339,7 +354,7 @@ public class UserService {
             user.setBlocked(true);
             return userMapper.toResponseNoFile(userRepository.save(user));
         } else {
-            throw new RuntimeException("User not found with id " + id);
+            throw new LocalizedException("user.not.found");
         }
     }
 }

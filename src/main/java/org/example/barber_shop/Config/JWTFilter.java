@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Entity.LoggedOutToken;
 import org.example.barber_shop.Entity.User;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Repository.LoggedOutTokenRepository;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,10 +39,10 @@ public class JWTFilter extends OncePerRequestFilter {
                         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                     }else {
-                        throw new RuntimeException("Invalid token.");
+                        throw new LocalizedException("invalid.token");
                     }
                 } else {
-                    throw new RuntimeException("Token has been logged out.");
+                    throw new LocalizedException("token.logged.out");
                 }
             }
             filterChain.doFilter(request, response);

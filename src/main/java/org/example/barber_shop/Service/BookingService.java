@@ -2,6 +2,7 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
+import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.Booking.*;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Exception.LocalizedException;
@@ -13,6 +14,7 @@ import org.example.barber_shop.Util.TimeUtil;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.WeekFields;
@@ -85,8 +87,44 @@ public class BookingService {
         }
     }
 
+    private int countBookingOfUserInMonth(User customer, Timestamp startTime){
+        LocalDateTime dateTime = startTime.toLocalDateTime();
+        LocalDateTime startOfMonth = dateTime.with(TemporalAdjusters.firstDayOfMonth()).toLocalDate().atStartOfDay();
+        LocalDateTime endOfMonth = dateTime.with(TemporalAdjusters.lastDayOfMonth()).toLocalDate().atTime(23, 59, 59, 999999999);
+        Timestamp startDateTimestamp = Timestamp.valueOf(startOfMonth);
+        Timestamp endDateTimestamp = Timestamp.valueOf(endOfMonth);
+        return bookingRepository.countAllByCustomerAndStartTimeBetween(customer, startDateTimestamp, endDateTimestamp);
+    }
+
     public BookingResponseNoUser addBooking(BookingRequest bookingRequest) {
         if (bookingRequest.startTime.after(new Timestamp(System.currentTimeMillis()))) {
+            User customer = userRepository.findById(SecurityUtils.getCurrentUserId()).orElse(null);
+            if (customer == null) {
+                throw new LocalizedException("server.error");
+            }
+            int bookingCountMonth = countBookingOfUserInMonth(customer, bookingRequest.startTime);
+            switch (customer.getRank()){
+                case BRONZE -> {
+                    if (bookingCountMonth >= 4){
+                        throw new LocalizedException("booking.count.month", 4);
+                    }
+                }
+                case SILVER -> {
+                    if (bookingCountMonth >= 5){
+                        throw new LocalizedException("booking.count.month", 5);
+                    }
+                }
+                case GOLD -> {
+                    if (bookingCountMonth >= 6){
+                        throw new LocalizedException("booking.count.month", 6);
+                    }
+                }
+                case DIAMOND -> {
+                    if (bookingCountMonth >= 7){
+                        throw new LocalizedException("booking.count.month", 7);
+                    }
+                }
+            }
             Optional<User> staff = userRepository.findById(bookingRequest.staff_id);
             if (staff.isPresent()) {
                 User staff_checked = staff.get();
@@ -102,7 +140,7 @@ public class BookingService {
                 Timestamp endTime = TimeUtil.calculateEndTime(bookingRequest.startTime, tempTime);
                 if (isTimeValid(staff_checked, bookingRequest.startTime, endTime)) {
                     if (isTimeInAssignedShift(staff_checked, bookingRequest.startTime, endTime)) {
-                        User customer = SecurityUtils.getCurrentUser();
+                        customer = SecurityUtils.getCurrentUser();
                         Booking booking = new Booking();
                         booking.setStatus(BookingStatus.PENDING);
                         booking.setCustomer(customer);
@@ -123,17 +161,16 @@ public class BookingService {
                         bookingRepository.save(booking);
                         return bookingMapper.toResponse(booking);
                     } else {
-//                        throw new LocalizedException("estimate.end.time.staff.no.shift", endTime, staff_checked.getName(), bookingRequest.startTime, endTime);
-                        throw new RuntimeException("Estimate end time is " + endTime + ".Staff "+ staff_checked.getName() +" has no shift from " + bookingRequest.startTime + " to " + endTime);
+                        throw new LocalizedException("estimate.end.time.staff.no.shift", endTime, staff_checked.getName(), bookingRequest.startTime, endTime);
                     }
                 } else {
-                    throw new RuntimeException("Estimate end time is " + endTime + ".Conflict with staff's time, "+ staff_checked.getName() +" already have a booking from " + bookingRequest.startTime + " to " + endTime);
+                    throw new LocalizedException("estimate.end.time.conflict.staff.time", endTime, staff_checked.getName(), bookingRequest.startTime, endTime);
                 }
             } else {
-                throw new RuntimeException("Staff not found.");
+                throw new LocalizedException("staff.not.found");
             }
         } else {
-            throw new RuntimeException("Start time must be in the future.");
+            throw new LocalizedException("start.time.future");
         }
 
     }
@@ -195,17 +232,11 @@ public class BookingService {
             week = today.get(weekFields.weekOfYear());
             year = today.getYear();
         } else if (week == null || year == null) {
-            throw new RuntimeException("Both week and year must be provided or neither.");
+            throw new LocalizedException("week.year.required");
         }
         LocalDate[] weekDates = getStartAndEndOfWeek(week, year);
         Timestamp startDate = Timestamp.valueOf(weekDates[0].atStartOfDay());
         Timestamp endDate = Timestamp.valueOf(weekDates[1].atTime(23, 59, 59));
-        WeekFields weekFields = WeekFields.of(Locale.getDefault());
-        LocalDate startDateLocal = LocalDate.ofYearDay(year, 1)
-                .with(weekFields.weekOfYear(), week)
-                .with(weekFields.dayOfWeek(), 1); // Monday
-        LocalDate endDateLocal = startDateLocal.plusDays(6); // Sunday
-        List<StaffShift> staffShifts = staffShiftRepository.findByStaffIdAndDateBetween(staff_id, startDateLocal, endDateLocal);
         return bookingMapper.toWorkScheduleResponses(bookingRepository.findByStaff_IdAndStartTimeBetweenAndStatus(staff_id, startDate, endDate, BookingStatus.PAID));
     }
 
@@ -276,13 +307,13 @@ public class BookingService {
                     bookingRepository.save(booking);
                     return bookingMapper.toResponse(booking);
                 } else {
-                    throw new RuntimeException("Staff has no shift on this time.");
+                    throw new LocalizedException("staff.no.shift");
                 }
             } else {
-                throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
+                throw new LocalizedException("staff.time.conflict.booking");
             }
         } else {
-            throw new RuntimeException("Staff not found.");
+            throw new LocalizedException("staff.not.found");
         }
     }
 
@@ -294,10 +325,10 @@ public class BookingService {
                 checkedBooking.setStatus(BookingStatus.CANCELLED);
                 bookingRepository.save(checkedBooking);
             } else {
-                throw new RuntimeException("Booking can only be canceled if in PENDING status.");
+                throw new LocalizedException("booking.cannot.cancel");
             }
         } else {
-            throw new RuntimeException("Booking not found.");
+            throw new LocalizedException("booking.not.found");
         }
     }
 
@@ -337,16 +368,16 @@ public class BookingService {
                         booking.setBookingDetails(newBookingDetails);
                         return bookingMapper.toResponse(bookingRepository.save(booking));
                     } else {
-                        throw new RuntimeException("Staff has no shift on this time.");
+                        throw new LocalizedException("staff.no.shift");
                     }
                 } else {
-                    throw new RuntimeException("Conflict with staff's time, staff already have a booking in this time.");
+                    throw new LocalizedException("staff.time.conflict.booking");
                 }
             } else {
-                throw new RuntimeException("Staff not found.");
+                throw new LocalizedException("staff.salary.not.found");
             }
         } else {
-            throw new RuntimeException("Booking not found or can not be update now.");
+            throw new LocalizedException("booking.update.invalid");
         }
     }
 
@@ -362,21 +393,33 @@ public class BookingService {
     }
 
     public BookingResponseNoUser updateBooking(long id) {
-        User staff = SecurityUtils.getCurrentUser();
-        Booking booking = bookingRepository.findByIdAndStaff(id, staff);
+        User user = SecurityUtils.getCurrentUser();
+        Booking booking;
+        switch (user.getRole()){
+            case ROLE_ADMIN -> {
+                booking = bookingRepository.findById(id).orElse(null);
+            }
+            case ROLE_CUSTOMER -> {
+                booking = bookingRepository.findByIdAndCustomer(id, user);
+            }
+            case ROLE_STAFF -> {
+                booking = bookingRepository.findByIdAndStaff(id, user);
+            }
+            default -> booking = null;
+        }
         if (booking != null) {
             if (booking.getStatus() == BookingStatus.PAID) {
                 if (booking.getEndTime().before(new Timestamp(System.currentTimeMillis()))) {
                     booking.setStatus(BookingStatus.COMPLETED);
                     return bookingMapper.toResponse(bookingRepository.save(booking));
                 } else {
-                    throw new RuntimeException("Booking can only be set to COMPLETED after booking's end time.");
+                    throw new LocalizedException("booking.end.time.required");
                 }
             } else {
-                throw new RuntimeException("Booking can only be complete if in PAID status.");
+                throw new LocalizedException("booking.status.required");
             }
         } else {
-            throw new RuntimeException("Booking not found, or this is not your booking.");
+            throw new LocalizedException("booking.not.found");
         }
     }
 
@@ -389,13 +432,13 @@ public class BookingService {
                     booking.setStatus(BookingStatus.NO_SHOW);
                     return bookingMapper.toResponse(bookingRepository.save(booking));
                 } else {
-                    throw new RuntimeException("Booking can only be set to NO_SHOW after booking's end time.");
+                    throw new LocalizedException("booking.no.show");
                 }
             } else {
-                throw new RuntimeException("Booking can only be set to NO_SHOW if in PAID status.");
+                throw new LocalizedException("booking.no.show.paid");
             }
         } else {
-            throw new RuntimeException("Booking not found.");
+            throw new LocalizedException("booking.not.found");
         }
     }
     public BookingResponseAdmin getBookingWithId(long id){
@@ -406,7 +449,7 @@ public class BookingService {
                 if (bookingOptional.isPresent()) {
                     return bookingMapper.toResponseAdmin(bookingOptional.get());
                 } else {
-                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                    throw new LocalizedException("booking.not.found.id", id);
                 }
             }
             case ROLE_CUSTOMER -> {
@@ -415,7 +458,7 @@ public class BookingService {
                     return bookingMapper.toResponseAdmin(booking);
                 }
                 else {
-                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                    throw new LocalizedException("booking.not.found.id", id);
                 }
             }
             case ROLE_STAFF -> {
@@ -424,12 +467,10 @@ public class BookingService {
                     return bookingMapper.toResponseAdmin(booking);
                 }
                 else {
-                    throw new RuntimeException("Booking not found with id " + id + " or you don't have permission to access this resource!");
+                    throw new LocalizedException("booking.not.found.id", id);
                 }
             }
-            default -> {
-                throw new RuntimeException("Something went wrong.");
-            }
+            default -> throw new LocalizedException("sth-went-wrong");
         }
     }
     public BookingResponseNoStaff rejectBooking(long id){
@@ -439,7 +480,7 @@ public class BookingService {
             booking.setStatus(BookingStatus.REJECTED);
             return bookingMapper.toResponseNoStaff(bookingRepository.save(booking));
         } else {
-            throw new RuntimeException("Booking not found.");
+            throw new LocalizedException("booking.not.found");
         }
     }
 }

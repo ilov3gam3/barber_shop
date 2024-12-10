@@ -10,12 +10,14 @@ import org.example.barber_shop.DTO.Booking.BookingResponseAdmin;
 import org.example.barber_shop.DTO.Payment.PaymentRequest;
 import org.example.barber_shop.DTO.Payment.PaymentResponse;
 import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.BookingMapper;
 import org.example.barber_shop.Mapper.PaymentMapper;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.Util.VNPayUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.Local;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +42,7 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
     private final MailService mailService;
     private final BookingMapper bookingMapper;
+    private final UserRepository userRepository;
     @Value("${vnp_TmnCode}")
     private String VNP_TMN_CODE;
     @Value("${vnp_ReturnUrl}")
@@ -51,25 +54,29 @@ public class PaymentService {
     @Value("${front_end_server}")
     private String fe_server;
     private final VoucherRepository voucherRepository;
+    private final RankService rankService;
 
     public String getVnpayUrl(PaymentRequest paymentRequest, HttpServletRequest request) throws UnsupportedEncodingException {
         if (paymentRequest.bookingIds != null){
             for (int i = 0; i < paymentRequest.bookingIds.size(); i++) {
                 if (paymentRequest.bookingIds.get(i) == null){
-                    throw new RuntimeException("Booking ids can not be null.");
+                    throw new LocalizedException("booking.ids.not.null");
                 }
             }
             Long customer_id = SecurityUtils.getCurrentUserId();
+            User customer = userRepository.findById(customer_id).orElse(null);
+            if (customer == null){
+                throw new LocalizedException("customer.not.found");
+            }
             List<Booking> bookings = bookingRepository.findAllByIdInAndCustomer_IdAndStatus(paymentRequest.bookingIds, customer_id, BookingStatus.PENDING);
             if (bookings.isEmpty()){
-                throw new RuntimeException("No booking id is valid.");
+                throw new LocalizedException("booking.id.invalid");
             }
             List<Booking> bookingsPaid = bookingRepository.findAllByStatus(BookingStatus.PAID);
             for (Booking pendingBooking : bookings) {
                 for (Booking paidBooking : bookingsPaid) {
-                    if (pendingBooking.getStartTime().before(paidBooking.getEndTime()) &&
-                            pendingBooking.getEndTime().after(paidBooking.getStartTime())) {
-                        throw new IllegalStateException("Time conflict detected for booking ID: " + pendingBooking.getId());
+                    if (pendingBooking.getStartTime().before(paidBooking.getEndTime()) && pendingBooking.getEndTime().after(paidBooking.getStartTime())) {
+                        throw new LocalizedException("booking.id.conflict" , pendingBooking.getId());
                     }
                 }
             }
@@ -79,13 +86,16 @@ public class PaymentService {
             if (!paymentRequest.voucherCode.isEmpty()){
                 voucher = voucherRepository.findByCodeAndDeletedFalse(paymentRequest.voucherCode);
                 if (voucher == null){
-                    throw new RuntimeException("Invalid voucher code");
+                    throw new LocalizedException("voucher.invalid");
                 }
                 if (!voucher.isValid()){
-                    throw new RuntimeException("This voucher expired");
+                    throw new LocalizedException("voucher.expired");
                 }
                 if (!voucher.canUse()){
-                    throw new RuntimeException("This voucher is out of use.");
+                    throw new LocalizedException("voucher.out.of.use");
+                }
+                if (customer.getRank().ordinal() < voucher.getForRank().ordinal()){
+                    throw new LocalizedException("voucher.invalid");
                 }
                 discountAmount = voucher.calculateDiscount(amount/100L);
                 amount -= (discountAmount*100L);
@@ -163,10 +173,10 @@ public class PaymentService {
                 paymentRepository.save(payment);
                 return VNP_PAY_URL + "?" + queryUrl;
             } else {
-                throw new RuntimeException("This booking is paid, or not in PENDING status.");
+                throw new LocalizedException("booking.not.paid");
             }
         } else {
-            throw new RuntimeException("Booking ids are null.");
+            throw new LocalizedException("booking.ids.not.null");
         }
     }
     public long getAmount(List<Booking> bookings){
@@ -215,7 +225,8 @@ public class PaymentService {
                     try {
                         paid_at = sqlFormatter.format(formatter.parse(paid_at));
                     } catch (ParseException e) {
-                        throw new RuntimeException(e.getMessage());
+                        e.printStackTrace();
+                        throw new LocalizedException("err.process.payment");
                     }
                     String booking_ids_string = vnp_OrderInfo.split("\\|")[1];
                     List<Long> booking_ids = Arrays.stream(booking_ids_string.split(",")).map(Long::parseLong).toList();
@@ -244,6 +255,18 @@ public class PaymentService {
                     for (Booking booking : bookings){
                         booking.setStatus(BookingStatus.PAID);
                         booking.setPayment(payment);
+                        long temp = 0;
+                        for (BookingDetail bookingDetail : booking.getBookingDetails()){
+                            if (bookingDetail.getService() != null){
+                                bookingDetail.setFinalPrice(bookingDetail.getService().getPrice());
+                                temp += bookingDetail.getService().getPrice();
+                            }
+                            if (bookingDetail.getCombo() != null){
+                                bookingDetail.setFinalPrice(bookingDetail.getCombo().getPrice());
+                                temp += bookingDetail.getCombo().getPrice();
+                            }
+                        }
+                        booking.setTotalPrice(temp);
                     }
                     bookingRepository.saveAll(bookings);
                     Notification notification = new Notification();
@@ -257,6 +280,7 @@ public class PaymentService {
                     notification.setUser(null);
                     simpMessagingTemplate.convertAndSendToUser(payment.getBookings().get(0).getCustomer().getEmail(), "/topic", notification);
                     mailService.sendMailPaymentSuccess(payment.getBookings().get(0).getCustomer().getEmail(), notification.getTargetUrl());
+                    rankService.checkRank(bookings.get(0).getCustomer().getId());
                     return "success";
                 }
                 else {
@@ -324,10 +348,10 @@ public class PaymentService {
                 bookingRepository.save(booking);
                 return bookingMapper.toResponseAdmin(booking);
             } else {
-                throw new RuntimeException("Only booking in pending status can be paid by cash.");
+                throw new LocalizedException("cash.pay.on.pending.only");
             }
         } else {
-            throw new RuntimeException("Can't find booking with id " + id);
+            throw new LocalizedException("booking.not.found");
         }
     }
 }

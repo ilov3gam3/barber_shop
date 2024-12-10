@@ -8,16 +8,14 @@ import org.example.barber_shop.Entity.Booking;
 import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Entity.StaffShift;
 import org.example.barber_shop.Entity.User;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.StaffShiftMapper;
 import org.example.barber_shop.Repository.BookingRepository;
 import org.example.barber_shop.Repository.ShiftRepository;
 import org.example.barber_shop.Repository.StaffShiftRepository;
 import org.example.barber_shop.Repository.UserRepository;
-import org.example.barber_shop.Util.SecurityUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,7 +38,7 @@ public class ShiftService {
     public List<StaffShiftResponse> addStaffShift(StaffShiftRequest shiftRequest) {
         for (int i = 0; i < shiftRequest.dates.size(); i++) {
             if (shiftRequest.dates.get(i).isBefore(LocalDate.now())) {
-                throw new RuntimeException("Invalid date, all dates must be in the future.");
+                throw new LocalizedException("all.dates.in.future");
             }
         }
         Optional<Shift> shift = shiftRepository.findById(shiftRequest.shiftId);
@@ -51,7 +49,7 @@ public class ShiftService {
                 List<StaffShift> staffShiftCheck = staffShiftRepository.findByStaffIdAndDateIn(user.getId(), shiftRequest.dates);
                 for (int i = 0; i < staffShiftCheck.size(); i++) {
                     if (staffShiftCheck.get(i).getStartTime() == checkedShift.getStartTime() && staffShiftCheck.get(i).getEndTime() == checkedShift.getEndTime()) {
-                        throw new RuntimeException("Staff already have this shift.");
+                        throw new LocalizedException("staff.had.shift");
                     }
                 }
                 ArrayList<StaffShift> staffShifts = new ArrayList<>();
@@ -67,10 +65,10 @@ public class ShiftService {
 
                 return staffShiftMapper.toStaffShiftResponses(staffShiftRepository.saveAll(staffShifts));
             } else {
-                throw new RuntimeException("Invalid staff id.");
+                throw new LocalizedException("staff.not.found");
             }
         } else {
-            throw new RuntimeException("Invalid shift id.");
+            throw new LocalizedException("invalid.shift.id");
         }
     }
     public List<Shift> getAllShift(){
@@ -83,7 +81,7 @@ public class ShiftService {
             week = today.get(weekFields.weekOfYear());
             year = today.getYear();
         } else if (week == null || year == null) {
-            throw new RuntimeException("Both week and year must be provided or neither.");
+            throw new LocalizedException("week.year.required");
         }
         WeekFields weekFields = WeekFields.of(Locale.getDefault());
         LocalDate startDate = LocalDate.ofYearDay(year, 1)
@@ -99,7 +97,7 @@ public class ShiftService {
             week = today.get(weekFields.weekOfYear());
             year = today.getYear();
         } else if (week == null || year == null) {
-            throw new RuntimeException("Both week and year must be provided or neither.");
+            throw new LocalizedException("week.year.required");
         }
         WeekFields weekFields = WeekFields.of(Locale.getDefault());
         LocalDate startDate = LocalDate.ofYearDay(year, 1)
@@ -117,7 +115,7 @@ public class ShiftService {
             checkedShift.setEndTime(shiftRequest.endTime);
             return shiftRepository.save(checkedShift);
         } else {
-            throw new RuntimeException("Invalid shift id.");
+            throw new LocalizedException("invalid.shift.id");
         }
     }
     public Shift addShift(AddShiftRequest addShiftRequest){
@@ -138,7 +136,7 @@ public class ShiftService {
     }
     public static Timestamp convertToTimestamp(LocalDate date, LocalTime time) {
         if (date == null || time == null) {
-            throw new IllegalArgumentException("Date and time must not be null");
+            throw new LocalizedException("date.time.not.null");
         }
         LocalDateTime dateTime = LocalDateTime.of(date, time);
         return Timestamp.valueOf(dateTime);

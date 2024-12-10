@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.Service.ServiceUpdateRequest;
 import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Service.ServiceRequest;
@@ -56,7 +57,7 @@ public class ServiceService {
             serviceTypeRepository.save(serviceType);
             return serviceMapper.toResponse(savedService);
         } else {
-            throw new RuntimeException("Invalid service type id, there is no service type with this id.");
+            throw new LocalizedException("service.type.not.found");
         }
     }
 
@@ -98,13 +99,13 @@ public class ServiceService {
                     }
                     return serviceMapper.toResponse(serviceRepository.save(service));
                 } else {
-                    throw new RuntimeException("Service type not found.");
+                    throw new LocalizedException("service.type.not.found");
                 }
             } else {
-                throw new RuntimeException("Service not found with id " + serviceUpdateRequest.id);
+                throw new LocalizedException("service.not.found");
             }
         } else {
-            throw new RuntimeException("Service not found with id " + serviceUpdateRequest.id);
+            throw new LocalizedException("service.not.found");
         }
     }
     public boolean delete(long id){

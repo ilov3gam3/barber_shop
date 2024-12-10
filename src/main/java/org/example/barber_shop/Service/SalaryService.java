@@ -9,6 +9,7 @@ import org.example.barber_shop.DTO.Salary.WeeklySalaryStaffResponse;
 import org.example.barber_shop.Entity.StaffSalary;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Entity.WeeklySalary;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.StaffSalaryMapper;
 import org.example.barber_shop.Mapper.WeeklySalaryMapper;
 import org.example.barber_shop.Repository.StaffSalaryRepository;
@@ -45,10 +46,10 @@ public class SalaryService {
                 staffSalary.setPercentage(staffSalaryUpdateRequest.percentage);
                 return staffSalaryMapper.toStaffSalaryResponse(staffSalaryRepository.save(staffSalary));
             } else {
-                throw new RuntimeException("Some error to server, cant find staff salary if staff " + staff.getName());
+                throw new LocalizedException("staff.salary.error", staff.getName());
             }
         } else {
-            throw new RuntimeException("Staff not found with id " + staffSalaryUpdateRequest.staff_id);
+            throw new LocalizedException("staff.not.found");
         }
     }
     public List<StaffSalaryResponse> getAllStaffSalary(){
@@ -60,7 +61,7 @@ public class SalaryService {
             StaffSalary staffSalary = staffSalaryRepository.findByStaff(staff);
             return staffSalaryMapper.toStaffSalaryResponse(staffSalary);
         } else {
-            throw new RuntimeException("Staff not found with id " + staff_id);
+            throw new LocalizedException("staff.not.found");
         }
     }
     public List<WeeklySalaryAdminResponse> adminGetWeeklySalary(Integer week, Integer year, Long staff_id){
@@ -70,7 +71,7 @@ public class SalaryService {
             week = today.get(weekFields.weekOfYear());
             year = today.getYear();
         } else if (week == null || year == null) {
-            throw new RuntimeException("Both week and year must be provided or neither.");
+            throw new LocalizedException("week.year.required");
         }
         List<WeeklySalary> weeklySalaries;
         LocalDate weekStartDate = getStartOfWeek(week, year);
@@ -89,7 +90,7 @@ public class SalaryService {
             week = today.get(weekFields.weekOfYear());
             year = today.getYear();
         } else if (week == null || year == null) {
-            throw new RuntimeException("Both week and year must be provided or neither.");
+            throw new LocalizedException("week.year.required");
         }
         LocalDate weekStartDate = getStartOfWeek(week, year);
         LocalDate weekEndDate = getEndOfWeek(week, year);

@@ -2,6 +2,7 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Entity.User;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.stereotype.Service;
@@ -39,11 +40,11 @@ public class TemporaryCodeService {
         String code = request.get("code");
         String userId = getUserId(code);
         if (userId == null) {
-            throw new RuntimeException("INVALID_CODE");
+            throw new LocalizedException("invalid.code");
         } else {
             User user = userRepository.findById(Long.parseLong(userId)).orElse(null);
             if (user == null) {
-                throw new RuntimeException("INVALID_CODE");
+                throw new LocalizedException("invalid.code");
             } else {
                 return jwtUtil.generateToken(user);
             }

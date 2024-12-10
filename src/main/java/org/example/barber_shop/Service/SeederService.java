@@ -1,6 +1,7 @@
 package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.Constants.Rank;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Repository.*;
@@ -103,6 +104,7 @@ public class SeederService implements CommandLineRunner {
         user2_1.setVerified(true);
         user2_1.setBlocked(false);
         user2_1.setAvatar(file);
+        user2_1.setRank(Rank.BRONZE);
         user2_1.setRole(Role.ROLE_CUSTOMER);
 
         User user2_2 = new User();
@@ -114,6 +116,7 @@ public class SeederService implements CommandLineRunner {
         user2_2.setVerified(true);
         user2_2.setBlocked(false);
         user2_2.setAvatar(file);
+        user2_2.setRank(Rank.BRONZE);
         user2_2.setRole(Role.ROLE_CUSTOMER);
 
         User user3 = new User();

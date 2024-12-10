@@ -5,6 +5,7 @@ import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.Constants.ReviewDetailType;
 import org.example.barber_shop.DTO.Review.*;
 import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.ReviewDetailMapper;
 import org.example.barber_shop.Mapper.ReviewMapper;
 import org.example.barber_shop.Repository.BookingRepository;
@@ -61,13 +62,13 @@ public class ReviewService {
                     review.setDetails(reviewDetails);
                     return reviewMapper.toReviewResponse(reviewRepository.save(review));
                 } else {
-                    throw new RuntimeException("There is a invalid booking detail id.");
+                    throw new LocalizedException("review.invalid.booking.detail.id");
                 }
             } else {
-                throw new RuntimeException("Only COMPLETED bookings can be reviewed.");
+                throw new LocalizedException("review.invalid.booking");
             }
         } else {
-            throw new RuntimeException("Booking not found with id " + reviewAddRequest.bookingId);
+            throw new LocalizedException("booking.not.found");
         }
     }
     public BookingDetail findBookingDetailWithId(long id, List<BookingDetail> bookingDetails){
@@ -85,8 +86,6 @@ public class ReviewService {
         Set<Long> reviewedBookingIds = reviewDetails.stream()
                 .map(reviewDetail -> reviewDetail.bookingDetailId)
                 .collect(Collectors.toSet());
-        System.out.println(bookingDetailIds);
-        System.out.println(reviewedBookingIds);
         return reviewedBookingIds.containsAll(bookingDetailIds);
     }
 
@@ -103,12 +102,12 @@ public class ReviewService {
                     review.getDetails().get(i).setRating(reviewDetailUpdateRequestOptional.get().rating);
                     review.getDetails().get(i).setComment(reviewDetailUpdateRequestOptional.get().comment);
                 } else {
-                    throw new RuntimeException("There is a invalid review detail id.");
+                    throw new LocalizedException("review.invalid.booking.detail.id");
                 }
             }
             return reviewMapper.toReviewResponse(reviewRepository.save(review));
         } else {
-            throw new RuntimeException("Review not found with id " + reviewUpdateRequest.id);
+            throw new LocalizedException("review.invalid.id");
         }
     }
     public ReviewDetailResponse updateReviewDetail(ReviewDetailUpdateRequest reviewDetailUpdateRequest){
@@ -119,7 +118,7 @@ public class ReviewService {
             reviewDetail.setComment(reviewDetailUpdateRequest.comment);
             return reviewDetailMapper.toReviewDetailResponse(reviewDetailRepository.save(reviewDetail));
         } else {
-            throw new RuntimeException("ReviewDetail not found with id " + reviewDetailUpdateRequest.id);
+            throw new LocalizedException("review.detail.invalid.id");
         }
     }
     public List<ReviewResponseStaff> getStaffReview(long id){

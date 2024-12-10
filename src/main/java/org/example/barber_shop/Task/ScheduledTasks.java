@@ -3,6 +3,8 @@ package org.example.barber_shop.Task;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
 import org.example.barber_shop.Constants.NotificationType;
+import org.example.barber_shop.Constants.Rank;
+import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Service.MailService;
@@ -17,6 +19,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -31,6 +34,7 @@ public class ScheduledTasks {
     private final StaffShiftRepository staffShiftRepository;
     private final StaffSalaryRepository staffSalaryRepository;
     private final WeeklySalaryRepository weeklySalaryRepository;
+    private final UserRepository userRepository;
     @Value("${front_end_server}")
     private String fe_server;
     @Scheduled(fixedRate = 60 * 1000) // every 1 min
@@ -41,7 +45,6 @@ public class ScheduledTasks {
             Timestamp endTime = Timestamp.valueOf(now.plusMinutes(1).minusSeconds(1)); // End of the current minute
             List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(
                     BookingStatus.PAID, startTime, endTime);
-            if (bookings.isEmpty()) return;
 
             List<Notification> notifications = new ArrayList<>();
             for (Booking booking : bookings) {
@@ -62,6 +65,31 @@ public class ScheduledTasks {
                 notification.setUser(null);
                 simpMessagingTemplate.convertAndSendToUser(user.getEmail(), "/topic", notification);
                 mailService.sendMailIncomingBooking(bookings.get(i).getCustomer().getEmail(), notification.getTargetUrl());
+            }
+            // cancel booking if you don't show up in 15min
+            now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).plusMinutes(15);
+            startTime = Timestamp.valueOf(now);
+            endTime = Timestamp.valueOf(now.plusMinutes(1).minusSeconds(1));
+            bookings = bookingRepository.findByStatusAndStartTimeBetween(BookingStatus.PENDING, startTime, endTime);
+            notifications = new ArrayList<>();
+            for (int i = 0; i < bookings.size(); i++) {
+                bookings.get(i).setStatus(BookingStatus.CANCELLED);
+                Notification tempNotification = new Notification();
+                tempNotification.setUser(bookings.get(i).getCustomer());
+                tempNotification.setType(NotificationType.BOOKING_CANCELLATION);
+                tempNotification.setTitle("Booking cancelled");
+                tempNotification.setMessage("Your booking is canceled, because you dont show up 15 minutes before start time.");
+                tempNotification.setTargetUrl(fe_server + "/temp/booking/" + bookings.get(i).getId());
+                tempNotification.setSeen(false);
+                notifications.add(tempNotification);
+            }
+            bookingRepository.saveAll(bookings);
+            notificationRepository.saveAll(notifications);
+            for (int i = 0; i < bookings.size(); i++) {
+                User user = bookings.get(i).getCustomer();
+                Notification notification = notifications.get(i);
+                notification.setUser(null);
+                simpMessagingTemplate.convertAndSendToUser(user.getEmail(), "/topic", notification);
             }
         } catch (Exception e) {
             System.err.println("Error during scheduled task execution: " + e.getMessage());
@@ -101,9 +129,8 @@ public class ScheduledTasks {
             System.err.println("Error during unpaid booking notification: " + e.getMessage());
         }
     }
-    @Scheduled(cron = "0 38 23 * * WED")
+    @Scheduled(cron = "0 0 0 * * MON")
     public void generateWeeklySalary(){
-        System.out.println("task tính lương chạy");
         LocalDateTime startDateWeek = TimeUtil.getLastWeekStartDate();
         LocalDateTime endDateWeek = TimeUtil.getLastWeekEndDate();
         List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(BookingStatus.PAID, Timestamp.valueOf(startDateWeek), Timestamp.valueOf(endDateWeek));
@@ -155,5 +182,146 @@ public class ScheduledTasks {
         }
         Duration duration = Duration.between(start, end);
         return duration.toMinutes() / 60.0;
+    }
+
+    @Scheduled(cron = "0 0 0 21 * ?")
+    public void announceRank(){
+        List<User> customers = userRepository.findAllByRole(Role.ROLE_CUSTOMER);
+        LocalDateTime startOfMonth = LocalDateTime.now()
+                .with(TemporalAdjusters.firstDayOfMonth())
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        LocalDateTime endOfMonth = LocalDateTime.now()
+                .with(TemporalAdjusters.lastDayOfMonth())
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59)
+                .withNano(999999999);
+        Timestamp startMonth = Timestamp.valueOf(startOfMonth);
+        Timestamp endMonth = Timestamp.valueOf(endOfMonth);
+        for (User customer : customers) {
+            long amountUsed = bookingRepository.sumTotalPrice(customer.getId(), startMonth, endMonth);
+            switch (customer.getRank()){
+                case SILVER -> {
+                    if (amountUsed < 200000){
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("Use our services to keep your rank");
+                        notification.setMessage("You need to use " + (200000 - amountUsed) + " to keep you stay at rank SILVER.");
+                        notification.setTargetUrl(fe_server + "/services");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+                case GOLD -> {
+                    if (amountUsed < 300000){
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("Use our services to keep your rank");
+                        notification.setMessage("You need to use " + (300000 - amountUsed) + " to keep you stay at rank GOLD.");
+                        notification.setTargetUrl(fe_server + "/services");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+                case DIAMOND -> {
+                    if (amountUsed < 500000){
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("Use our services to keep your rank");
+                        notification.setMessage("You need to use " + (500000 - amountUsed) + " to keep you stay at rank DIAMOND.");
+                        notification.setTargetUrl(fe_server + "/services");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+            }
+        }
+    }
+
+    @Scheduled(cron = "1 0 0 1 * ?")
+    public void checkRank() {
+        List<User> customers = userRepository.findAllByRole(Role.ROLE_CUSTOMER);
+        LocalDateTime startOfLastMonth = LocalDateTime.now()
+                .minusMonths(1)
+                .with(TemporalAdjusters.firstDayOfMonth())
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+
+        LocalDateTime endOfLastMonth = LocalDateTime.now()
+                .minusMonths(1)
+                .with(TemporalAdjusters.lastDayOfMonth())
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59)
+                .withNano(999999999);
+        Timestamp startMonth = Timestamp.valueOf(startOfLastMonth);
+        Timestamp endMonth = Timestamp.valueOf(endOfLastMonth);
+        for (User customer : customers) {
+            long amountUsed = bookingRepository.sumTotalPrice(customer.getId(), startMonth, endMonth);
+            switch (customer.getRank()){
+                case SILVER -> {
+                    if (amountUsed < 200000){
+                        customer.setRank(Rank.BRONZE);
+                        userRepository.save(customer);
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("You are back to rank " + Rank.BRONZE);
+                        notification.setMessage("You only use " + amountUsed + " not enough to keep you at rank " + Rank.SILVER + ".");
+                        notification.setTargetUrl(fe_server + "/");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+                case GOLD -> {
+                    if (amountUsed < 300000){
+                        customer.setRank(Rank.BRONZE);
+                        userRepository.save(customer);
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("You are back to rank " + Rank.BRONZE);
+                        notification.setMessage("You only use " + amountUsed + " not enough to keep you at rank " + Rank.GOLD + ".");
+                        notification.setTargetUrl(fe_server + "/");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+                case DIAMOND -> {
+                    if (amountUsed < 500000){
+                        customer.setRank(Rank.BRONZE);
+                        userRepository.save(customer);
+                        Notification notification = new Notification();
+                        notification.setUser(customer);
+                        notification.setType(NotificationType.GENERAL_INFO);
+                        notification.setTitle("You are back to rank " + Rank.BRONZE);
+                        notification.setMessage("You only use " + amountUsed + " not enough to keep you at rank " + Rank.DIAMOND + ".");
+                        notification.setTargetUrl(fe_server + "/");
+                        notification.setSeen(false);
+                        notificationRepository.save(notification);
+                        notification.setUser(null);
+                        simpMessagingTemplate.convertAndSendToUser(customer.getEmail(), "/topic", notification);
+                    }
+                }
+            }
+        }
     }
 }

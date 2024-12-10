@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.ReviewDetailType;
 import org.example.barber_shop.DTO.Combo.ComboUpdateRequest;
 import org.example.barber_shop.Entity.*;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Repository.*;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Combo.ComboRequest;
@@ -54,7 +55,7 @@ public class ComboService {
             Combo savedCombo = comboRepository.save(combo);
             return comboMapper.toResponse(savedCombo);
         } else {
-            throw new RemoteException("Invalid ids, no service is found with provided ids");
+            throw new LocalizedException("service.not.found");
         }
     }
 
@@ -103,7 +104,7 @@ public class ComboService {
             }
             return comboResponse;
         } else {
-            throw new RuntimeException("Invalid id, no combo is found with provided id " + id);
+            throw new LocalizedException("combo.not.found");
         }
     }
     public boolean delete(long id){
@@ -162,7 +163,7 @@ public class ComboService {
             combo = comboRepository.save(combo);
             return comboMapper.toResponse(comboRepository.save(combo));
         } else {
-            throw new RuntimeException("Combo id not found");
+            throw new LocalizedException("combo.not.found");
         }
     }
 }

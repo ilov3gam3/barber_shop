@@ -3,6 +3,7 @@ package org.example.barber_shop.Service;
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Entity.Notification;
 import org.example.barber_shop.Entity.User;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Repository.NotificationRepository;
 import org.example.barber_shop.Util.SecurityUtils;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,7 @@ public class NotificationService {
             notification.setUser(null);
             return notification;
         } else {
-            throw new RuntimeException("Notification not found with id " + id);
+            throw new LocalizedException("notification.not.found");
         }
     }
 }

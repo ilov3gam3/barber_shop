@@ -3,13 +3,11 @@ package org.example.barber_shop.Config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.Entity.File;
 import org.example.barber_shop.Entity.User;
 import org.example.barber_shop.Repository.FileRepository;
 import org.example.barber_shop.Repository.UserRepository;
 import org.example.barber_shop.Service.TemporaryCodeService;
-import org.example.barber_shop.Util.JWTUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,8 +41,8 @@ public class SecurityConfig {
     private final TemporaryCodeService temporaryCodeService;
     @Value("${front_end_server}")
     private String front_end_server;
-    private final String[] publicApi = {"/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**", "/api/review/all", "/api/review/staff-review/**", "/api/combo/get-one-combo/**"};
-    private final String[] adminApi = {"/api/booking/complete-booking/**", "/api/users", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift", "/api/salary/**", "/api/booking/no-show-booking/**", "/api/weekly-salary", "/api/payment/cash/**", "/api/voucher/**"};
+    private final String[] publicApi = {"/api/AI/**", "/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/service-type/get-all-service-types", "/api/service/get-all-services", "/api/combo/get-all-combos", "/api/users/get-all-staffs", "/api/users/get-all-customers", "/api/users/get-all-admins", "/api/booking/get-staff-work-schedule-in-week", "/api/payment/vnpay-result", "/api/staff-shift/get-staff-shift", "/websocket/**", "/api/review/all", "/api/review/staff-review/**", "/api/combo/get-one-combo/**", "/api/voucher/available-vouchers", "/api/voucher/available-vouchers"};
+    private final String[] adminApi = {"/api/users", "/api/service-type/add-service-type", "/api/service/add-service", "/api/combo/add-combo", "/api/shift/get-all-shifts", "/api/shift/**", "/api/booking/admin-book", "/api/staff-shift", "/api/salary/**", "/api/booking/no-show-booking/**", "/api/weekly-salary", "/api/payment/cash/**", "/api/voucher/**"};
     private final String[] customerApi = {"/api/booking/book", "/api/payment/get-vnpay-url", "/api/booking/update-booking", "/api/booking/cancel/**", "/api/review"};
     private final String[] staffApi = {"/api/weekly-salary/staff", "api/booking/reject-booking/**"};
     @Bean
@@ -70,12 +68,28 @@ public class SecurityConfig {
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"status\":403,\"message\":\"FORBIDDEN\",\"payload\": \"You don't have permission to access this resource!\"}");
+                    String jsonResponse = "{"
+                            + "\"status\":403,"
+                            + "\"message\":\"FORBIDDEN\","
+                            + "\"payload\":{"
+                            + "\"ko\":\"권한이 없습니다.\","
+                            + "\"vi\":\"Bạn không có quyền truy cập tài nguyên này!\""
+                            + "}"
+                            + "}";
+                    response.getWriter().write(jsonResponse);
                 })
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"status\":403,\"message\":\"FORBIDDEN\",\"payload\": \"You are not logged in!\"}");
+                    String jsonResponse = "{"
+                            + "\"status\":403,"
+                            + "\"message\":\"FORBIDDEN\","
+                            + "\"payload\":{"
+                            + "\"ko\":\"로그인되지 않았습니다.\","
+                            + "\"vi\":\"Bạn chưa đăng nhập!\""
+                            + "}"
+                            + "}";
+                    response.getWriter().write(jsonResponse);
                 })
         );
         http.oauth2Login(httpSecurityOAuth2LoginConfigurer -> {

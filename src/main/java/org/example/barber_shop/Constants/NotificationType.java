@@ -6,5 +6,6 @@ public enum NotificationType {
     BOOKING_CANCELLATION,
     UPCOMING_BOOKING,
     UNPAID_BOOKING_REMINDER,
+    NEW_VOUCHER,
     GENERAL_INFO;
 }

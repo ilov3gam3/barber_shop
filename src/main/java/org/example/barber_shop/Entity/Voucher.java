@@ -1,8 +1,8 @@
 package org.example.barber_shop.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
+import org.example.barber_shop.Constants.Rank;
 
 import java.time.LocalDate;
 
@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Table(name = "vouchers")
 @ToString
 public class Voucher extends DistributedEntity{
+    @Column(unique = true)
     private String code;
     private int maxUses;
     private int discount;
@@ -22,6 +23,8 @@ public class Voucher extends DistributedEntity{
     private LocalDate endDate;
     private long minPrice;
     private int uses;
+    @Enumerated(EnumType.STRING)
+    private Rank forRank = Rank.BRONZE;
     private boolean disabled;
     private boolean deleted = false;
 

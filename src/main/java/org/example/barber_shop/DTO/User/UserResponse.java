@@ -1,5 +1,6 @@
 package org.example.barber_shop.DTO.User;
 
+import org.example.barber_shop.Constants.Rank;
 import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.File.FileResponseNoOwner;
 
@@ -16,6 +17,7 @@ public class UserResponse {
     public boolean verified;
     public boolean blocked;
     public Role role;
+    public Rank rank;
     public Timestamp createdAt;
     public Timestamp updatedAt;
 }

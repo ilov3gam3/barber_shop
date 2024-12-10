@@ -2,6 +2,7 @@ package org.example.barber_shop.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.barber_shop.Constants.Rank;
 import org.example.barber_shop.Constants.Role;
 
 import java.sql.Date;
@@ -31,4 +32,6 @@ public class User extends DistributedEntity{
 
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Enumerated(EnumType.STRING)
+    private Rank rank = Rank.BRONZE;
 }

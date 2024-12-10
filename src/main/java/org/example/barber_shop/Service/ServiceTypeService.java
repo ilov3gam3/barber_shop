@@ -6,6 +6,7 @@ import org.example.barber_shop.DTO.ServiceType.ServiceTypeResponse;
 import org.example.barber_shop.DTO.ServiceType.ServiceTypeResponseNoService;
 import org.example.barber_shop.DTO.ServiceType.ServiceTypeUpdateRequest;
 import org.example.barber_shop.Entity.ServiceType;
+import org.example.barber_shop.Exception.LocalizedException;
 import org.example.barber_shop.Mapper.ServiceTypeMapper;
 import org.example.barber_shop.Repository.ServiceTypeRepository;
 
@@ -35,7 +36,7 @@ public class ServiceTypeService {
             serviceType.setName(serviceTypeUpdateRequest.name);
             return serviceTypeMapper.toServiceTypeResponseNoService(serviceTypeRepository.save(serviceType));
         } else {
-            throw new RuntimeException("Service type not found with id " + serviceTypeUpdateRequest.id);
+            throw new LocalizedException("service.type.not.found");
         }
     }
     public boolean delete(long id){
@@ -46,7 +47,7 @@ public class ServiceTypeService {
             serviceTypeRepository.save(serviceType);
             return true;
         } else {
-            throw new RuntimeException("Service type not found with id " + id);
+            throw new LocalizedException("service.type.not.found");
         }
     }
 }
