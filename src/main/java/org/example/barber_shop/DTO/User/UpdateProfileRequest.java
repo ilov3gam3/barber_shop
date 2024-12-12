@@ -5,5 +5,6 @@ import java.sql.Date;
 public class UpdateProfileRequest {
     public String name;
     public String phone;
+    public String description;
     public Date dob;
 }

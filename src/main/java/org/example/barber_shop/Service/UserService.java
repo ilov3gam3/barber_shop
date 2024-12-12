@@ -157,6 +157,9 @@ public class UserService {
     public UserResponse updateProfile(UpdateProfileRequest updateProfileRequest){
         User user = userRepository.findById(SecurityUtils.getCurrentUserId()).orElse(null);
         if (user != null){
+            if (user.getRole() == Role.ROLE_STAFF){
+                user.setDescription(updateProfileRequest.description);
+            }
             user.setName(updateProfileRequest.name);
             user.setPhone(updateProfileRequest.phone);
             user.setDob(updateProfileRequest.dob);
@@ -281,18 +284,13 @@ public class UserService {
             user.setPhone(updateUserRequest.phone);
             user.setDob(updateUserRequest.dob);
             user.setEmail(updateUserRequest.email);
+            if (user.getRole() == Role.ROLE_STAFF){
+                user.setDescription(updateUserRequest.description);
+            }
             if (updateUserRequest.password != null){
                 if (!updateUserRequest.password.isEmpty()){
                     user.setPassword(passwordEncoder.encode(updateUserRequest.password));
                 }
-            }
-            if (user.getRole() != Role.ROLE_STAFF && updateUserRequest.role == Role.ROLE_STAFF){
-                user.setRole(updateUserRequest.role);
-                StaffSalary staffSalary = new StaffSalary();
-                staffSalary.setStaff(user);
-                staffSalary.setRate(25000);
-                staffSalary.setPercentage(10);
-                staffSalaryRepository.save(staffSalary);
             }
             user.setBlocked(updateUserRequest.blocked);
             user = userRepository.save(user);
@@ -319,8 +317,9 @@ public class UserService {
                             File file = fileRepository.findByName("default-avatar");
                             user.setAvatar(file);
                             user = userRepository.save(user);
-                            if (user.getRole() == Role.ROLE_STAFF){
+                            if (adminCreateUser.role == Role.ROLE_STAFF){
                                 if (Validator.isOver18YearsOld(adminCreateUser.dob)){
+                                    user.setDescription(adminCreateUser.description);
                                     StaffSalary staffSalary = new StaffSalary();
                                     staffSalary.setStaff(user);
                                     staffSalary.setRate(25000);

@@ -22,7 +22,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStaff_Id(Long staffId);
     List<Booking> findByStatusAndStartTimeBetween(BookingStatus bookingStatus, Timestamp startTime, Timestamp endTime);
     Booking findByIdAndCustomerAndStatus(Long id, User customer, BookingStatus status);
-    List<Booking> findByStaffAndStatusNotAndStartTimeInOrEndTimeInOrStartTimeLessThanAndEndTimeGreaterThan(User staff, BookingStatus bookingStatus, Collection<Timestamp> startTime, Collection<Timestamp> endTime, Timestamp startTime2, Timestamp endTime2);
     List<Booking> findAllByStatus(BookingStatus status);
     Booking findByIdAndCustomer(long id, User customer);
     Booking findByIdAndStaff(long id, User staff);
@@ -31,4 +30,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT SUM(b.totalPrice) FROM Booking b WHERE b.customer.id = :id AND b.status = 'PAID' and b.startTime >= :monthStart and b.startTime <= :monthEnd")
     Long sumTotalPrice(@Param("id") long id, @Param("monthStart") Timestamp monthStart, @Param("monthEnd") Timestamp monthEnd);
+    List<Booking> findByStaffAndStatusNotAndStartTimeGreaterThanOrEndTimeLessThanOrStartTimeLessThanAndEndTimeGreaterThan(User staff, BookingStatus status, Timestamp startTime, Timestamp endTime, Timestamp startTime2, Timestamp endTime2);
 }

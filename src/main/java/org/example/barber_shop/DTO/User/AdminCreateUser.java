@@ -11,5 +11,6 @@ public class AdminCreateUser {
     public String phone;
     public Date dob;
     public String password;
+    public String description;
     public Role role;
 }

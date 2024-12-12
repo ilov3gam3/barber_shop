@@ -131,7 +131,7 @@ public class ShiftService {
             shiftRepository.delete(shift.get());
             return true;
         } else {
-            return false;
+            throw new LocalizedException("shift.not.found");
         }
     }
     public static Timestamp convertToTimestamp(LocalDate date, LocalTime time) {
@@ -148,16 +148,15 @@ public class ShiftService {
             User staff = staffShift.getStaff();
             Timestamp startTime = convertToTimestamp(staffShift.getDate(), staffShift.getStartTime());
             Timestamp endTime = convertToTimestamp(staffShift.getDate(), staffShift.getEndTime());
-            List<Timestamp> timestamps = List.of(startTime, endTime);
-            List<Booking> bookings = bookingRepository.findByStaffAndStatusNotAndStartTimeInOrEndTimeInOrStartTimeLessThanAndEndTimeGreaterThan(staff, BookingStatus.PENDING, timestamps, timestamps, startTime, endTime);
+            List<Booking> bookings = bookingRepository.findByStaffAndStatusNotAndStartTimeGreaterThanOrEndTimeLessThanOrStartTimeLessThanAndEndTimeGreaterThan(staff, BookingStatus.REJECTED, startTime, endTime, startTime, endTime);
             if (bookings.isEmpty()) {
                 staffShiftRepository.delete(staffShift);
                 return true;
             } else {
-                return false;
+                throw new LocalizedException("staff.shift.has.booking");
             }
         } else {
-            return false;
+            throw new LocalizedException("staff.shift.not.found");
         }
     }
 }

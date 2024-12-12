@@ -17,6 +17,7 @@ public class StaffResponse {
     public boolean blocked;
     public Role role;
     public float rating;
+    public String description;
     public int bookingCount;
     public Timestamp createdAt;
     public Timestamp updatedAt;

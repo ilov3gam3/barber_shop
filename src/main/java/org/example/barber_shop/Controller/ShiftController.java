@@ -28,15 +28,9 @@ public class ShiftController {
     }
     @DeleteMapping("/{id}")
     public ApiResponse<?> deleteShift(@PathVariable("id") int id) {
-        if (shiftService.deleteShift(id)) {
-            return new ApiResponse<>(
-                    HttpStatus.OK.value(), "SHIFT DELETED SUCCESS", null
-            );
-        } else {
-            return new ApiResponse<>(
-                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "SHIFT DELETED FAIL", null
-            );
-        }
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "SHIFT DELETED SUCCESS", shiftService.deleteShift(id)
+        );
     }
     @PutMapping("")
     public ApiResponse<?> updateShift(@RequestBody ShiftRequest shiftRequest){

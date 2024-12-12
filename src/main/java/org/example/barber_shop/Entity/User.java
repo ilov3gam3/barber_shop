@@ -23,6 +23,7 @@ public class User extends DistributedEntity{
     @ManyToOne
     @JoinColumn(name = "avatar_id")
     private File avatar;
+    private String description;
     private String password;
     private String token;
     @Column(unique = true)

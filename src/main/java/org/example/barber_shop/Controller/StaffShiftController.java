@@ -32,14 +32,8 @@ public class StaffShiftController {
     }
     @DeleteMapping("/{id}")
     public ApiResponse<?> delete(@PathVariable long id) {
-        if (shiftService.delete(id)){
-            return new ApiResponse<>(
-                    HttpStatus.OK.value(), "DELETED", null
-            );
-        } else {
-            return new ApiResponse<>(
-                    HttpStatus.UNPROCESSABLE_ENTITY.value(), "DELETE FAIL", null
-            );
-        }
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "DELETED", shiftService.delete(id)
+        );
     }
 }

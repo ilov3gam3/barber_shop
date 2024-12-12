@@ -85,7 +85,6 @@ public class UserController {
     }
     @PutMapping("")
     public ApiResponse<?> updateUser(@RequestBody UpdateUserRequest updateUserRequest){
-        System.out.println("update user put mapping");
         return new ApiResponse<>(
                 HttpStatus.OK.value(), "USER UPDATED", userService.updateUser(updateUserRequest)
         );
