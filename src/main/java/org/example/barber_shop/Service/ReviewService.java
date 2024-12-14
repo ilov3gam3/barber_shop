@@ -37,7 +37,6 @@ public class ReviewService {
     public ReviewResponse addReview(ReviewAddRequest reviewAddRequest){
         User customer = SecurityUtils.getCurrentUser();
         Booking booking = bookingRepository.findByIdAndCustomer(reviewAddRequest.bookingId, customer);
-        System.out.println(booking.getStatus());
         if(booking != null){
             if (booking.getStatus() == BookingStatus.COMPLETED){
                 Review review = new Review();

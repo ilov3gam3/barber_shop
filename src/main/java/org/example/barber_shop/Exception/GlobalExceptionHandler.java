@@ -20,17 +20,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LocalizedException.class)
     public ResponseEntity<ApiResponse<?>> localizedException(LocalizedException e) {
         e.printStackTrace();
-        String messageVi = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("vi"));
-        System.err.println(messageVi);
+        String messageEn = messageSource.getMessage(e.getMessageKey(), e.getArgs(), Locale.ENGLISH);
         String messageKo = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("ko"));
-        Map<String, String> map = Map.of("vi", messageVi, "ko", messageKo);
+        String messageVi = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("vi"));
+        Map<String, String> map = Map.of("en", messageEn, "ko", messageKo, "vi", messageVi);
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), map);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
         e.printStackTrace();
-        Map<String, String> map = Map.of("vi", "Lỗi hệ thống", "ko", "시스템 오류", "debug", e.getMessage());
+        Map<String, String> map = Map.of("en", "System error.", "ko", "시스템 오류", "vi", "Lỗi hệ thống.", "debug", e.getMessage());
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), map);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }

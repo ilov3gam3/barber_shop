@@ -31,7 +31,6 @@ public class GeminiService {
         } else {
             throw new LocalizedException("server.error");
         }
-        System.out.println(askAI);
         JSONObject payload = new JSONObject();
         JSONArray contents = new JSONArray();
         JSONArray parts = new JSONArray();

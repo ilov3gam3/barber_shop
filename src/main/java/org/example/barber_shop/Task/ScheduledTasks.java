@@ -134,7 +134,6 @@ public class ScheduledTasks {
         LocalDateTime startDateWeek = TimeUtil.getLastWeekStartDate();
         LocalDateTime endDateWeek = TimeUtil.getLastWeekEndDate();
         List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(BookingStatus.PAID, Timestamp.valueOf(startDateWeek), Timestamp.valueOf(endDateWeek));
-        System.out.println(bookings.size());
         List<WeeklySalary> weeklySalaries = new ArrayList<>();
         for (int i = 0; i < bookings.size(); i++) {
             User staff = bookings.get(i).getStaff();
@@ -153,7 +152,6 @@ public class ScheduledTasks {
         for (WeeklySalary weeklySalary : weeklySalaries) {
             weeklySalary.calculateTotalEarnings();
         }
-        System.out.println(weeklySalaries);
         weeklySalaryRepository.saveAll(weeklySalaries);
     }
     public int checkIfUserExistsInWeekSalaries(List<WeeklySalary> weeklySalaries, User user) {
@@ -171,7 +169,6 @@ public class ScheduledTasks {
             hours += calculateHours(staffShift.getStartTime(), staffShift.getEndTime());
         }
         weeklySalary.setHours(hours);
-        System.out.println(user.getId());
         StaffSalary staffSalary = staffSalaryRepository.findByStaff(user);
         weeklySalary.setSalary(staffSalary.getRate());
         weeklySalary.setPercentage(staffSalary.getPercentage());

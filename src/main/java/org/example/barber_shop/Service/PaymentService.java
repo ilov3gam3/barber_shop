@@ -245,9 +245,7 @@ public class PaymentService {
                     payment = paymentRepository.save(payment);
                     if (payment.getVoucherCode() != null){
                         Voucher voucher = voucherRepository.findByCodeAndDeletedFalse(payment.voucherCode);
-                        if (voucher == null) {
-                            System.out.println("cant find voucher with code " + payment.voucherCode);
-                        } else {
+                        if (voucher != null) {
                             voucher.setUses(voucher.getUses() + 1);
                             voucherRepository.save(voucher);
                         }
@@ -284,15 +282,12 @@ public class PaymentService {
                     return "success";
                 }
                 else {
-                    System.out.println("payment đã được thanh toán.");
                     return "fail";
                 }
             } else {
-                System.out.println("payment không tồn tại.");
                 return "fail";
             }
         } else {
-            System.out.println("chữ kí không đúng.");
             return "fail";
         }
     }

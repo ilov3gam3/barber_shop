@@ -73,6 +73,7 @@ public class SecurityConfig {
                             + "\"message\":\"FORBIDDEN\","
                             + "\"payload\":{"
                             + "\"ko\":\"권한이 없습니다.\","
+                            + "\"en\":\"You do not have permission to access this resource!\","
                             + "\"vi\":\"Bạn không có quyền truy cập tài nguyên này!\""
                             + "}"
                             + "}";
@@ -86,6 +87,7 @@ public class SecurityConfig {
                             + "\"message\":\"FORBIDDEN\","
                             + "\"payload\":{"
                             + "\"ko\":\"로그인되지 않았습니다.\","
+                            + "\"en\":\"You are not logged in!\","
                             + "\"vi\":\"Bạn chưa đăng nhập!\""
                             + "}"
                             + "}";

@@ -38,7 +38,6 @@ public class UserController {
 
     @PutMapping("/profile")
     public ApiResponse<?> updateUserProfile(@RequestBody UpdateProfileRequest updateProfileRequest){
-        System.out.println("update profile");
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
                 "PROFILE UPDATED",

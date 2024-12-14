@@ -188,7 +188,6 @@ public class UserService {
         try {
             List<User> staffs = userRepository.findAllByRole(Role.ROLE_STAFF);
             List<Booking> bookings = bookingRepository.findByStaffIn(staffs);
-            System.out.println(bookings.size());
             List<StaffResponse> staffResponses = userMapper.toStaffResponses(staffs);
             for (int i = 0; i < staffs.size(); i++) {
                 if (bookings.isEmpty()){
