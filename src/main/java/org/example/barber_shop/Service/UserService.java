@@ -25,11 +25,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -56,7 +55,6 @@ public class UserService {
         Instant futureTime = now.plus(tokenTtl, ChronoUnit.MILLIS);
         return futureTime.toEpochMilli();
     }
-
     public UserResponse register(RegisterRequest registerRequest) {
         if (Validator.isValidEmail(registerRequest.email)){
             if (Validator.isValidPhone(registerRequest.phone)){

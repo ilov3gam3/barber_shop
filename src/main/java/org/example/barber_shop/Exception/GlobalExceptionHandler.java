@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Locale;
 import java.util.Map;
@@ -33,5 +34,11 @@ public class GlobalExceptionHandler {
         Map<String, String> map = Map.of("en", "System error.", "ko", "시스템 오류", "vi", "Lỗi hệ thống.", "debug", e.getMessage());
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), map);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<?>> noResourceFoundException(NoResourceFoundException e) {
+        e.printStackTrace();
+        ApiResponse<?> apiResponse = new ApiResponse<>( HttpStatus.NOT_FOUND.value(), "THE API YOU LOOKING FOR NOT FOUND", null);
+        return new ResponseEntity<>(apiResponse, HttpStatus.NOT_FOUND);
     }
 }

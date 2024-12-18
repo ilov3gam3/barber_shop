@@ -9,6 +9,7 @@ import java.time.LocalTime;
 @Getter
 @Setter
 public class StaffShiftResponse {
+    private long id;
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;

@@ -2,7 +2,6 @@ package org.example.barber_shop.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.Constants.BookingStatus;
-import org.example.barber_shop.Constants.Role;
 import org.example.barber_shop.DTO.Booking.*;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Exception.LocalizedException;
@@ -102,7 +101,7 @@ public class BookingService {
             if (customer == null) {
                 throw new LocalizedException("server.error");
             }
-            int bookingCountMonth = countBookingOfUserInMonth(customer, bookingRequest.startTime);
+            /*int bookingCountMonth = countBookingOfUserInMonth(customer, bookingRequest.startTime);
             switch (customer.getRank()){
                 case BRONZE -> {
                     if (bookingCountMonth >= 4){
@@ -124,7 +123,7 @@ public class BookingService {
                         throw new LocalizedException("booking.count.month", 7);
                     }
                 }
-            }
+            }*/
             Optional<User> staff = userRepository.findById(bookingRequest.staff_id);
             if (staff.isPresent()) {
                 User staff_checked = staff.get();
@@ -321,6 +320,9 @@ public class BookingService {
         Optional<Booking> booking = bookingRepository.findById(id);
         if (booking.isPresent()) {
             Booking checkedBooking = booking.get();
+            if (!Objects.equals(checkedBooking.getCustomer().getId(), SecurityUtils.getCurrentUserId())){
+                throw new LocalizedException("booking.not.found");
+            }
             if (checkedBooking.getStatus() == BookingStatus.PENDING) {
                 checkedBooking.setStatus(BookingStatus.CANCELLED);
                 bookingRepository.save(checkedBooking);

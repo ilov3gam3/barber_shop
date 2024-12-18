@@ -2,7 +2,6 @@ package org.example.barber_shop.Mapper;
 
 import org.example.barber_shop.DTO.Shift.AdminShiftResponse;
 import org.example.barber_shop.DTO.Shift.StaffShiftResponse;
-import org.example.barber_shop.Entity.Shift;
 import org.example.barber_shop.Entity.StaffShift;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

@@ -56,7 +56,7 @@ public class PaymentService {
     private final VoucherRepository voucherRepository;
     private final RankService rankService;
 
-    public String getVnpayUrl(PaymentRequest paymentRequest, HttpServletRequest request) throws UnsupportedEncodingException {
+    public String getVnpayUrl(PaymentRequest paymentRequest, HttpServletRequest request) {
         if (paymentRequest.bookingIds != null){
             for (int i = 0; i < paymentRequest.bookingIds.size(); i++) {
                 if (paymentRequest.bookingIds.get(i) == null){
@@ -72,14 +72,6 @@ public class PaymentService {
             if (bookings.isEmpty()){
                 throw new LocalizedException("booking.id.invalid");
             }
-            List<Booking> bookingsPaid = bookingRepository.findAllByStatus(BookingStatus.PAID);
-            for (Booking pendingBooking : bookings) {
-                for (Booking paidBooking : bookingsPaid) {
-                    if (pendingBooking.getStartTime().before(paidBooking.getEndTime()) && pendingBooking.getEndTime().after(paidBooking.getStartTime())) {
-                        throw new LocalizedException("booking.id.conflict" , pendingBooking.getId());
-                    }
-                }
-            }
             long amount = getAmount(bookings);
             long discountAmount = 0;
             Voucher voucher = null;
@@ -94,8 +86,15 @@ public class PaymentService {
                 if (!voucher.canUse()){
                     throw new LocalizedException("voucher.out.of.use");
                 }
+                if (amount/100 < voucher.getMinPrice()){
+                    throw new LocalizedException("min.price.not.enough");
+                }
                 if (customer.getRank().ordinal() < voucher.getForRank().ordinal()){
                     throw new LocalizedException("voucher.invalid");
+                }
+                List<Payment> payments = paymentRepository.findByCustomer_IdAndStatusAndVoucherCode(customer_id, TransactionStatus.SUCCESS, voucher.getCode());
+                if (!payments.isEmpty()){
+                    throw new LocalizedException("voucher.used");
                 }
                 discountAmount = voucher.calculateDiscount(amount/100L);
                 amount -= (discountAmount*100L);

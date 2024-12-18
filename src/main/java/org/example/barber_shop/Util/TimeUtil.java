@@ -3,6 +3,7 @@ package org.example.barber_shop.Util;
 import java.sql.Timestamp;
 import java.time.*;
 import java.time.temporal.WeekFields;
+import java.util.Arrays;
 
 public class TimeUtil {
     public static Timestamp calculateEndTime(Timestamp startTime, int minutesToAdd) {
