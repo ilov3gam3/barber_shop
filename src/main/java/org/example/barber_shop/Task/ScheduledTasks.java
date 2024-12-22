@@ -39,6 +39,7 @@ public class ScheduledTasks {
     private String fe_server;
     @Scheduled(fixedRate = 60 * 1000) // every 1 min
     public void scheduledTaskMinutes() {
+        System.out.println("task min run at " + System.currentTimeMillis());
         try {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).plusMinutes(30); // Strip seconds
             Timestamp startTime = Timestamp.valueOf(now); // Start of the current minute
@@ -97,6 +98,7 @@ public class ScheduledTasks {
     }
     @Scheduled(cron = "0 0 * * * *") // Run every hour
     public void notifyUnpaidBookings() {
+        System.out.println("run every hour");
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime targetTime = now.plusHours(24).truncatedTo(ChronoUnit.MINUTES); // 24 hours ahead
@@ -129,15 +131,17 @@ public class ScheduledTasks {
             System.err.println("Error during unpaid booking notification: " + e.getMessage());
         }
     }
-    @Scheduled(cron = "0 0 0 * * MON")
+    @Scheduled(cron = "0 1 0 * * MON")
     public void generateWeeklySalary(){
+        System.out.println("cal salary run");
         LocalDateTime startDateWeek = TimeUtil.getLastWeekStartDate();
         LocalDateTime endDateWeek = TimeUtil.getLastWeekEndDate();
         List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(BookingStatus.PAID, Timestamp.valueOf(startDateWeek), Timestamp.valueOf(endDateWeek));
         List<WeeklySalary> weeklySalaries = new ArrayList<>();
         for (int i = 0; i < bookings.size(); i++) {
             User staff = bookings.get(i).getStaff();
-            if (checkIfUserExistsInWeekSalaries(weeklySalaries, staff) == -1){
+            int index = checkIfUserExistsInWeekSalaries(weeklySalaries, staff);
+            if (index == -1){
                 WeeklySalary weeklySalary = new WeeklySalary();
                 weeklySalary.setStaff(staff);
                 weeklySalary.setWeekStartDate(startDateWeek.toLocalDate());
@@ -146,7 +150,7 @@ public class ScheduledTasks {
                 weeklySalary.setTotalMoneyMade(bookings.get(i).getTotalPrice());
                 weeklySalaries.add(weeklySalary);
             } else {
-                weeklySalaries.get(i).setTotalMoneyMade(bookings.get(i).getTotalPrice() + weeklySalaries.get(i).getTotalMoneyMade());
+                weeklySalaries.get(index).setTotalMoneyMade(bookings.get(i).getTotalPrice() + weeklySalaries.get(index).getTotalMoneyMade());
             }
         }
         for (WeeklySalary weeklySalary : weeklySalaries) {
