@@ -34,6 +34,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT SUM(b.totalPrice) FROM Booking b WHERE b.customer.id = :id AND b.status = 'PAID' and b.startTime >= :monthStart and b.startTime <= :monthEnd")
     Long sumTotalPrice(@Param("id") long id, @Param("monthStart") Timestamp monthStart, @Param("monthEnd") Timestamp monthEnd);
     List<Booking> findByStaffAndStatusNotAndStartTimeGreaterThanOrEndTimeLessThanOrStartTimeLessThanAndEndTimeGreaterThan(User staff, BookingStatus status, Timestamp startTime, Timestamp endTime, Timestamp startTime2, Timestamp endTime2);
+    List<Booking> findByStaffAndStatusInAndStartTimeGreaterThanAndEndTimeLessThan(User staff, Collection<BookingStatus> status, Timestamp startTime, Timestamp endTime);
 
     @Query("select new org.example.barber_shop.DTO.User.CustomerTopBookings(b.customer.id, sum(b.totalPrice), count(b.id)) from Booking b where b.status = 'COMPLETED' or b.status = 'PAID' group by b.customer.id")
     List<CustomerTopBookings> findTopCustomers();
@@ -48,4 +49,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<StaffTopBookings> findTopStaffs();
     @Query("select new org.example.barber_shop.DTO.User.StaffTopBookings(b.staff.id, sum(b.totalPrice), count(b.id)) from Booking b where (b.status = 'COMPLETED' or b.status = 'PAID') and b.startTime >= :from and b.endTime <= :to group by b.staff.id")
     List<StaffTopBookings> findTopStaffs(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    List<Booking> findByCustomer_IdAndStartTimeGreaterThanAndEndTimeLessThan(Long customer_id, Timestamp startTime, Timestamp endTime);
 }

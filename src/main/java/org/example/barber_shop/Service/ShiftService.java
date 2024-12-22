@@ -148,7 +148,11 @@ public class ShiftService {
             User staff = staffShift.getStaff();
             Timestamp startTime = convertToTimestamp(staffShift.getDate(), staffShift.getStartTime());
             Timestamp endTime = convertToTimestamp(staffShift.getDate(), staffShift.getEndTime());
-            List<Booking> bookings = bookingRepository.findByStaffAndStatusNotAndStartTimeGreaterThanOrEndTimeLessThanOrStartTimeLessThanAndEndTimeGreaterThan(staff, BookingStatus.REJECTED, startTime, endTime, startTime, endTime);
+//            List<Booking> bookings = bookingRepository.findByStaffAndStatusNotAndStartTimeGreaterThanOrEndTimeLessThanOrStartTimeLessThanAndEndTimeGreaterThan(staff, BookingStatus.REJECTED, startTime, endTime, startTime, endTime);
+            List<Booking> bookings = bookingRepository.findByStaffAndStatusInAndStartTimeGreaterThanAndEndTimeLessThan(staff, List.of(BookingStatus.PAID, BookingStatus.COMPLETED, BookingStatus.PENDING), startTime, endTime);
+            for (int i = 0; i < bookings.size(); i++) {
+                System.out.println(bookings.get(i).getId());
+            }
             if (bookings.isEmpty()) {
                 staffShiftRepository.delete(staffShift);
                 return true;

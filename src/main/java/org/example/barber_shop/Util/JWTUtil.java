@@ -74,7 +74,8 @@ public class JWTUtil {
         user.setName(claims.get("name", String.class));
         user.setEmail(claims.get("email", String.class));
         user.setPhone(claims.get("phone", String.class));
-        user.setDob(java.sql.Date.valueOf(claims.get("dob", String.class)));
+        String dob = claims.get("dob", String.class);
+        user.setDob(dob == null ? null : java.sql.Date.valueOf(dob));
         user.setAvatar(new File(claims.get("avatar", String.class)));
         user.setRole(Role.valueOf(claims.get("role", String.class)));
         return user;

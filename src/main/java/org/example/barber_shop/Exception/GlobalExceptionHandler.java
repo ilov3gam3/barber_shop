@@ -24,6 +24,7 @@ public class GlobalExceptionHandler {
         String messageEn = messageSource.getMessage(e.getMessageKey(), e.getArgs(), Locale.ENGLISH);
         String messageKo = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("ko"));
         String messageVi = messageSource.getMessage(e.getMessageKey(), e.getArgs(), new Locale("vi"));
+        System.out.println(messageVi);
         Map<String, String> map = Map.of("en", messageEn, "ko", messageKo, "vi", messageVi);
         ApiResponse<?> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), map);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

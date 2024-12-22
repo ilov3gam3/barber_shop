@@ -99,7 +99,7 @@ public class RankService {
         }
         userRepository.save(user);
     }
-    private boolean checkUserRankedUpInMonth(long user_id, Timestamp startMonth, Timestamp endMonth){
+    public boolean checkUserRankedUpInMonth(long user_id, Timestamp startMonth, Timestamp endMonth){
         Notification notification = notificationRepository.findByUser_IdAndTypeAndTitleAndCreatedAtGreaterThanAndCreatedAtLessThan(user_id, NotificationType.GENERAL_INFO, "You have ranked up", startMonth, endMonth);
         return notification != null;
     }

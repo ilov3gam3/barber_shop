@@ -17,6 +17,9 @@ public class PaymentResponse {
     public String cardType;
     public String bankTranNo;
     public Timestamp paid_at;
+    public String voucherCode;
+    public int voucherDiscount;
+    public long discountAmount;
     public Timestamp createdAt;
     public Timestamp updatedAt;
 }

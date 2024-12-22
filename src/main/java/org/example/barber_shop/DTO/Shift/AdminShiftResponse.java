@@ -10,6 +10,7 @@ import java.time.LocalTime;
 @Getter
 @Setter
 public class AdminShiftResponse {
+    private long id;
     private UserResponse staff;
     private LocalDate date;
     private LocalTime startTime;

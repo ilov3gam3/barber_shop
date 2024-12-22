@@ -98,4 +98,10 @@ public class BookingController {
                 HttpStatus.OK.value(), "BOOKING REJECTED", bookingService.rejectBooking(id)
         );
     }
+    @GetMapping("/booking-in-month")
+    public ApiResponse<?> getBookingInMonth(){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "BOOKINGS IN CURRENT MONTH", bookingService.getBookingsCurrentMonths()
+        );
+    }
 }

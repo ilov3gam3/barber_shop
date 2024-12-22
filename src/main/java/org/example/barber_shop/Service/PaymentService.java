@@ -57,6 +57,9 @@ public class PaymentService {
     private final RankService rankService;
 
     public String getVnpayUrl(PaymentRequest paymentRequest, HttpServletRequest request) {
+        if (paymentRequest.voucherCode == null){
+            paymentRequest.voucherCode = "";
+        }
         if (paymentRequest.bookingIds != null){
             for (int i = 0; i < paymentRequest.bookingIds.size(); i++) {
                 if (paymentRequest.bookingIds.get(i) == null){
@@ -80,9 +83,14 @@ public class PaymentService {
                 if (voucher == null){
                     throw new LocalizedException("voucher.invalid");
                 }
-                if (!voucher.isValid()){
-                    throw new LocalizedException("voucher.expired");
+                for (int i = 0; i < bookings.size(); i++) {
+                    if (!voucher.isValid(bookings.get(i).getStartTime())){
+                        throw new LocalizedException("voucher.invalid");
+                    }
                 }
+                /*if (!voucher.isValid()){
+                    throw new LocalizedException("voucher.expired");
+                }*/
                 if (!voucher.canUse()){
                     throw new LocalizedException("voucher.out.of.use");
                 }

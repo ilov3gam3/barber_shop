@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.barber_shop.Constants.Rank;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -40,5 +42,15 @@ public class Voucher extends DistributedEntity{
     public long calculateDiscount(long price) {
         long applicableDiscount = (price * discount) / 100;
         return Math.min(applicableDiscount, maxDiscount);
+    }
+    public boolean isValid(Timestamp input) {
+        if (input == null) {
+            return false;
+        }
+        LocalDateTime dateTime = input.toLocalDateTime();
+
+        return !disabled &&
+                (startDate == null || !dateTime.isBefore(startDate.atStartOfDay())) &&
+                (endDate == null || !dateTime.isAfter(endDate.atStartOfDay()));
     }
 }

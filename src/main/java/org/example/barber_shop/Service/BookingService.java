@@ -32,6 +32,7 @@ public class BookingService {
     private final StaffShiftRepository staffShiftRepository;
     private final PaymentRepository paymentRepository;
     private final ReviewDetailMapper reviewDetailMapper;
+    private final RankService rankService;
 
     public boolean isTimeValid(User staff, Timestamp startTime, Timestamp endTime) {
         List<Booking> bookings1 = bookingRepository.findByStaff_IdAndStatusAndStartTimeBeforeAndEndTimeAfter(staff.getId(), BookingStatus.PAID, endTime, startTime);
@@ -484,5 +485,37 @@ public class BookingService {
         } else {
             throw new LocalizedException("booking.not.found");
         }
+    }
+    public Map<String, Object> getBookingsCurrentMonths(){
+        User customer = SecurityUtils.getCurrentUser();
+        LocalDateTime startOfMonth = LocalDateTime.now()
+                .with(TemporalAdjusters.firstDayOfMonth())
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        LocalDateTime endOfMonth = LocalDateTime.now()
+                .with(TemporalAdjusters.lastDayOfMonth())
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59)
+                .withNano(999999999);
+        Timestamp startMonth = Timestamp.valueOf(startOfMonth);
+        Timestamp endMonth = Timestamp.valueOf(endOfMonth);
+        List<Booking> bookings = bookingRepository.findByCustomer_IdAndStartTimeGreaterThanAndEndTimeLessThan(customer.getId(), startMonth, endMonth);
+        long temp = 0;
+        int bookingCount = 0;
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).getStatus() == BookingStatus.PAID || bookings.get(i).getStatus() == BookingStatus.COMPLETED) {
+                temp += bookings.get(i).getTotalPrice();
+                bookingCount++;
+            }
+        }
+        boolean canRankUp = rankService.checkUserRankedUpInMonth(customer.getId(), startMonth, endMonth);
+        Map<String, Object> result = new HashMap<>();
+        result.put("money_used", temp);
+        result.put("bookings_count", bookingCount);
+        result.put("can_rank_up", !canRankUp);
+        return result;
     }
 }
