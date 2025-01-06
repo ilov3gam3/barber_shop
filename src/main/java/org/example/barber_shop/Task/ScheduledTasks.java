@@ -39,7 +39,6 @@ public class ScheduledTasks {
     private String fe_server;
     @Scheduled(fixedRate = 60 * 1000) // every 1 min
     public void scheduledTaskMinutes() {
-        System.out.println("task min run at " + System.currentTimeMillis());
         try {
             LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).plusMinutes(30); // Strip seconds
             Timestamp startTime = Timestamp.valueOf(now); // Start of the current minute
@@ -98,7 +97,6 @@ public class ScheduledTasks {
     }
     @Scheduled(cron = "0 0 * * * *") // Run every hour
     public void notifyUnpaidBookings() {
-        System.out.println("run every hour");
         try {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime targetTime = now.plusHours(24).truncatedTo(ChronoUnit.MINUTES); // 24 hours ahead
@@ -133,7 +131,6 @@ public class ScheduledTasks {
     }
     @Scheduled(cron = "0 1 0 * * MON")
     public void generateWeeklySalary(){
-        System.out.println("cal salary run");
         LocalDateTime startDateWeek = TimeUtil.getLastWeekStartDate();
         LocalDateTime endDateWeek = TimeUtil.getLastWeekEndDate();
         List<Booking> bookings = bookingRepository.findByStatusAndStartTimeBetween(BookingStatus.PAID, Timestamp.valueOf(startDateWeek), Timestamp.valueOf(endDateWeek));

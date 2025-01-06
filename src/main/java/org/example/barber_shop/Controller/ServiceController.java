@@ -2,6 +2,7 @@ package org.example.barber_shop.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.barber_shop.DTO.ApiResponse;
+import org.example.barber_shop.DTO.Service.SearchRequest;
 import org.example.barber_shop.DTO.Service.ServiceRequest;
 import org.example.barber_shop.DTO.Service.ServiceUpdateRequest;
 import org.example.barber_shop.Service.ServiceService;
@@ -47,5 +48,11 @@ public class ServiceController {
                     HttpStatus.UNPROCESSABLE_ENTITY.value(), "DELETE FAIL", null
             );
         }
+    }
+    @GetMapping("/search")
+    public ApiResponse<?> searchService(@ModelAttribute SearchRequest searchRequest){
+        return new ApiResponse<>(
+                HttpStatus.OK.value(), "SEARCH RESULT", serviceService.search(searchRequest)
+        );
     }
 }

@@ -1,7 +1,12 @@
 package org.example.barber_shop.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
+import org.example.barber_shop.DTO.Service.SearchRequest;
 import org.example.barber_shop.DTO.Service.ServiceUpdateRequest;
 import org.example.barber_shop.Entity.*;
 import org.example.barber_shop.Exception.LocalizedException;
@@ -10,6 +15,7 @@ import org.example.barber_shop.Util.SecurityUtils;
 import org.example.barber_shop.DTO.Service.ServiceRequest;
 import org.example.barber_shop.DTO.Service.ServiceResponse;
 import org.example.barber_shop.Mapper.ServiceMapper;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -128,5 +134,41 @@ public class ServiceService {
         } else {
             return false;
         }
+    }
+    @RequiredArgsConstructor
+    private static class ServiceSpecification implements Specification<Service> {
+        private final SearchRequest searchRequest;
+        @Override
+        public Predicate toPredicate(Root<Service> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+            Predicate predicate = criteriaBuilder.conjunction();
+            predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("deleted"), false));
+            if (searchRequest.getName() != null){
+                predicate = criteriaBuilder.like(root.get("name"), "%" + searchRequest.getName() + "%");
+            }
+            if (searchRequest.getDescription() != null){
+                predicate = criteriaBuilder.and(predicate,criteriaBuilder.like(root.get("description"), "%" + searchRequest.getDescription() + "%"));
+            }
+            if (searchRequest.getPriceMin() != null){
+                predicate = criteriaBuilder.and(predicate,criteriaBuilder.greaterThanOrEqualTo(root.get("price"), searchRequest.getPriceMin()));
+            }
+            if (searchRequest.getPriceMax() != null){
+                predicate = criteriaBuilder.and(predicate,criteriaBuilder.lessThanOrEqualTo(root.get("price"), searchRequest.getPriceMax()));
+            }
+            if (searchRequest.getEstimateTimeMin() != null){
+                predicate = criteriaBuilder.and(predicate,criteriaBuilder.greaterThanOrEqualTo(root.get("estimateTime"), searchRequest.getEstimateTimeMin()));
+            }
+            if (searchRequest.getEstimateTimeMax() != null){
+                predicate = criteriaBuilder.and(predicate,criteriaBuilder.lessThanOrEqualTo(root.get("estimateTime"), searchRequest.getEstimateTimeMax()));
+            }
+            if (searchRequest.getServiceType() != null){
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("serviceType").get("id"), searchRequest.getServiceType()));
+            }
+            return predicate;
+        }
+    }
+    public List<ServiceResponse> search(SearchRequest searchRequest) {
+        ServiceSpecification serviceSpecification = new ServiceSpecification(searchRequest);
+        List<Service> services = serviceRepository.findAll(serviceSpecification);
+        return serviceMapper.toResponseList(services);
     }
 }
