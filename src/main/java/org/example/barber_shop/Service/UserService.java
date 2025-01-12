@@ -127,6 +127,9 @@ public class UserService {
     public String login(LoginRequest loginRequest){
         User user = userRepository.findByEmail(loginRequest.email);
         if (user != null){
+            if (!user.isVerified()){
+                throw new LocalizedException("not.verify");
+            }
             try {
                 Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password));
                 SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
